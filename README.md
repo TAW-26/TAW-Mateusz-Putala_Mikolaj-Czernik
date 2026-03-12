@@ -1,6 +1,8 @@
 # Smart Voyager - Inteligentny Planer Podróży AI
 
-Smart Voyager to ekosystem aplikacji (Web + Mobile) rewolucjonizujący planowanie podróży. Dzięki integracji z modelami LLM (OpenAI/Gemini), system generuje spersonalizowane trasy na podstawie budżetu i zainteresowań, a w trakcie podróży pełni rolę asystenta głosowego.
+Smart Voyager to ekosystem aplikacji (Web + Mobile) rewolucjonizujący planowanie podróży. 
+Dzięki integracji z modelami LLM (OpenAI/Gemini), system generuje spersonalizowane trasy 
+na podstawie budżetu i zainteresowań, a w trakcie podróży pełni rolę asystenta głosowego.
 
 ## Technologie
 * **Backend:** Node.js, Express, JWT, MongoDB (Atlas)
@@ -19,15 +21,15 @@ Smart Voyager to ekosystem aplikacji (Web + Mobile) rewolucjonizujący planowani
 ### Backend
 1. Przejdź do folderu: `cd backend`
 2. Zainstaluj zależności: `npm install`
-3. Skonfiguruj plik `.env` (Baza danych, klucze API AI)
+3. Skonfiguruj plik `.env`
 4. Uruchom serwer: `npm run dev`
 
-### Frontend Web (TAW)
+### Frontend Web
 1. Przejdź do folderu: `cd web`
 2. Zainstaluj zależności: `npm install`
 3. Uruchom projekt: `npm start`
 
-### Frontend Mobile (Mobilne)
+### Frontend Mobile
 1. Przejdź do folderu: `cd mobile`
 2. Zainstaluj zależności: `npm install`
 3. Uruchom projekt: `npx expo start`
