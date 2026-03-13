@@ -1,4 +1,17 @@
+# Node & Apps
+node_modules/
+.expo/
+dist/
+build/
+
+# Secrets
+.env
+.env.local
+
+# IDEs
 .idea/
+.vscode/
 *.iml
-out/
-gen/
+
+# OS
+.DS_Store
