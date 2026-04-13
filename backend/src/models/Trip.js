@@ -28,6 +28,20 @@ const tripSchema = new mongoose.Schema({
         enum: ['planowana', 'w trakcie', 'zakończona'],
         default: 'planowana'
     }
-}, { timestamps: true });
+}, {
+    timestamps: true,
+    // To jest kluczowe, aby wirtualne pola pojawiały się w odpowiedziach JSON i obiektach
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true }
+});
+
+// Wirtualne pole obliczające czas trwania wycieczki w dniach
+tripSchema.virtual('duration').get(function() {
+    if (this.startDate && this.endDate) {
+        const diffInMs = Math.abs(this.endDate - this.startDate);
+        return Math.ceil(diffInMs / (1000 * 60 * 60 * 24));
+    }
+    return 0;
+});
 
 module.exports = mongoose.model('Trip', tripSchema);

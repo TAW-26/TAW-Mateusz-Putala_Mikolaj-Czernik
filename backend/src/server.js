@@ -3,8 +3,9 @@ const cors = require('cors');
 const dotenv = require('dotenv');
 const connectDB = require('./config/db');
 const authRoutes = require('./routes/authRoutes');
-const tripRoutes = require('./routes/tripRoutes'); // Dodano import tras wycieczek
+const tripRoutes = require('./routes/tripRoutes');
 const { protect } = require('./middleware/authMiddleware');
+const { errorHandler } = require('./middleware/errorMiddleware'); // Import handlera błędów
 
 // Konfiguracja środowiska i bazy danych
 dotenv.config();
@@ -33,6 +34,9 @@ app.get('/api/auth/profile', protect, (req, res) => {
 app.get('/', (req, res) => {
     res.send('API Voyager śmiga! 🚀');
 });
+
+// Middleware do obsługi błędów (musi być na końcu tras)
+app.use(errorHandler);
 
 // Uruchomienie serwera
 const PORT = process.env.PORT || 5000;
