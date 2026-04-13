@@ -38,6 +38,11 @@ Zakończono implementację rdzenia Backendowego, w tym:
 | :--- | :--- | :--- |
 | POST | `/api/trips/:tripId/waypoints` | Dodanie punktu (miejsce, współrzędne, opis) do konkretnej wycieczki |
 
+### Zarządzanie użytkownikami (`/api/users`) - *Tylko dla Administratora*
+| Metoda | Endpoint | Opis |
+| :--- | :--- | :--- |
+| DELETE | `/api/users/:id` | Usunięcie konta użytkownika (z blokadą usunięcia Super Admina) |
+
 ## 📂 Struktura Projektu
 * `/web` - Aplikacja webowa (React)
 * `/mobile` - Aplikacja mobilna (React Native)
@@ -50,7 +55,13 @@ Zakończono implementację rdzenia Backendowego, w tym:
 1. Przejdź do folderu: `cd backend`
 2. Zainstaluj zależności: `npm install`
 3. Skonfiguruj plik `.env` (wymagane: `MONGO_URI`, `JWT_SECRET`)
-4. Uruchom serwer: `npm run dev`
+4. Zainicjalizuj konto Administratora (Super Admina): `npm run seed:admin`
+
+    Dane logowania: superadmin@voyager.pl / TajneHaslo123!
+
+5. Uruchom serwer: `npm run dev`
+
+    
 
 ### Frontend Web
 1. Przejdź do folderu: `cd web`

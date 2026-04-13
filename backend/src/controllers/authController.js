@@ -24,18 +24,18 @@ exports.login = async (req, res) => {
     try {
         const { email, password } = req.body;
 
-        // Szukaj użytkownika
-        const user = await User.findOne({ email });
+        // ZMIANA: Dodano .select('+password'), ponieważ w modelu ustawiliśmy select: false
+        const user = await User.findOne({ email }).select('+password');
         if (!user) return res.status(404).json({ message: "Nie ma takiego użytkownika" });
 
-        // Porównaj hasła
-        const isMatch = await bcrypt.compare(password, user.password);
+        // ZMIANA: Użycie metody z modelu User do porównania haseł
+        const isMatch = await user.matchPassword(password);
         if (!isMatch) return res.status(400).json({ message: "Błędne hasło" });
 
         // Generuj token JWT
         const token = jwt.sign(
             { id: user._id, role: user.role },
-            process.env.JWT_SECRET || 'supersecretkey', // Pamiętaj dodać JWT_SECRET do .env
+            process.env.JWT_SECRET || 'supersecretkey',
             { expiresIn: '1d' }
         );
 

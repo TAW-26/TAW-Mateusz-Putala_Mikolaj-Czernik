@@ -4,10 +4,12 @@ const dotenv = require('dotenv');
 const connectDB = require('./config/db');
 const authRoutes = require('./routes/authRoutes');
 const tripRoutes = require('./routes/tripRoutes');
+const userRoutes = require('./routes/userRoutes');
 const { protect } = require('./middleware/authMiddleware');
-const { errorHandler } = require('./middleware/errorMiddleware'); // Import handlera błędów
+const { errorHandler } = require('./middleware/errorMiddleware');
 
 // Konfiguracja środowiska i bazy danych
+// Upewnij się, że plik .env jest w folderze głównym backend/
 dotenv.config();
 connectDB();
 
@@ -20,13 +22,14 @@ app.use(express.json());
 // Definicje tras
 app.use('/api/auth', authRoutes);
 app.use('/api/trips', tripRoutes);
+app.use('/api/users', userRoutes);
 
 // Chroniona trasa profilu (dowód działania systemu autoryzacji)
 app.get('/api/auth/profile', protect, (req, res) => {
     res.json({
         success: true,
         message: "Dostęp do profilu przyznany! 🛡️",
-        user: req.user
+        user: req.user // Teraz dzięki poprawce w protect, req.user zawiera też rolę!
     });
 });
 
