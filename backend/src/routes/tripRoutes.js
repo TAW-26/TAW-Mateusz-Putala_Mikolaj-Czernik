@@ -1,7 +1,7 @@
 const express = require('express');
 const { body, validationResult } = require('express-validator');
 const router = express.Router();
-const { createTrip, getTrips, deleteTrip } = require('../controllers/tripController');
+const { createTrip, getTrips, deleteTrip, addWaypoint } = require('../controllers/tripController'); // Dodano addWaypoint
 const { protect } = require('../middleware/authMiddleware');
 
 // Middleware do łapania błędów walidacji
@@ -23,5 +23,11 @@ router.route('/')
 
 router.route('/:id')
     .delete(protect, deleteTrip);
+
+// Nowa trasa dla Waypointów (zgodna z diagramem klas: Trip contains Waypoints)
+router.route('/:tripId/waypoints')
+    .post(protect, [
+        body('name').notEmpty().withMessage('Nazwa punktu jest wymagana')
+    ], validate, addWaypoint);
 
 module.exports = router;

@@ -30,7 +30,6 @@ const tripSchema = new mongoose.Schema({
     }
 }, {
     timestamps: true,
-    // To jest kluczowe, aby wirtualne pola pojawiały się w odpowiedziach JSON i obiektach
     toJSON: { virtuals: true },
     toObject: { virtuals: true }
 });
@@ -42,6 +41,12 @@ tripSchema.virtual('duration').get(function() {
         return Math.ceil(diffInMs / (1000 * 60 * 60 * 24));
     }
     return 0;
+});
+
+tripSchema.virtual('waypoints', {
+    ref: 'Waypoint',
+    localField: '_id',
+    foreignField: 'trip'
 });
 
 module.exports = mongoose.model('Trip', tripSchema);
