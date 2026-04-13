@@ -3,6 +3,7 @@ const cors = require('cors');
 const dotenv = require('dotenv');
 const connectDB = require('./config/db');
 const authRoutes = require('./routes/authRoutes');
+const tripRoutes = require('./routes/tripRoutes'); // Dodano import tras wycieczek
 const { protect } = require('./middleware/authMiddleware');
 
 // Konfiguracja środowiska i bazy danych
@@ -17,6 +18,7 @@ app.use(express.json());
 
 // Definicje tras
 app.use('/api/auth', authRoutes);
+app.use('/api/trips', tripRoutes);
 
 // Chroniona trasa profilu (dowód działania systemu autoryzacji)
 app.get('/api/auth/profile', protect, (req, res) => {
