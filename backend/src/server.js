@@ -1,20 +1,23 @@
 const express = require('express');
 const cors = require('cors');
+const dotenv = require('dotenv');
 const connectDB = require('./config/db');
-require('dotenv').config();
+const authRoutes = require('./routes/authRoutes');
+
+dotenv.config();
+connectDB();
 
 const app = express();
 
 // Middleware
 app.use(cors());
-app.use(express.json()); // Pozwala serwerowi rozumieć format JSON
+app.use(express.json());
 
-// Połączenie z bazą danych
-connectDB();
+// Trasy (Routes)
+app.use('/api/auth', authRoutes);
 
-// Podstawowy testowy punkt (route)
 app.get('/', (req, res) => {
-    res.send('API Smart Voyager działa poprawnie!');
+    res.send('API Voyager śmiga! 🚀');
 });
 
 const PORT = process.env.PORT || 5000;
