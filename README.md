@@ -8,10 +8,10 @@ na podstawie budżetu i zainteresowań, a w trakcie podróży pełni rolę asyst
 Zakończono implementację rdzenia Backendowego, w tym:
 * **Integracja z bazą danych:** Pełna komunikacja z MongoDB Atlas.
 * **Autoryzacja i Role (RBAC):** Zaawansowany system ról (User, Admin). Logowanie i rejestracja oparte na JWT oraz szyfrowaniu haseł (bcrypt).
-* **Smart Routing (AI-Ready):** Model trasy od punktu A (Origin) do punktu B (Destination) z obsługą geolokalizacji.
+* **Pełny cykl edycji (CRUD):** Możliwość pełnego zarządzania profilami, wycieczkami oraz przystankami (Tworzenie, Odczyt, Aktualizacja, Usuwanie).
 * **Zaawansowana Logika Biznesowa:** * CRUD wycieczek z automatycznym wyliczaniem czasu trwania (`virtuals`).
     * Obsługa przystanków (**Waypoints**) z zachowaniem kolejności (`order_index`).
-    * **Kaskadowe Usuwanie:** Usunięcie wycieczki automatycznie czyści wszystkie powiązane z nią przystanki w bazie danych.
+    * **Kaskadowe Usuwanie:** Usunięcie użytkownika lub wycieczki automatycznie czyści wszystkie powiązane dane (User -> Trips -> Waypoints).
 * **Panel Administracyjny:** Globalny wgląd w użytkowników, statystyki oraz pełną bazę wszystkich przystanków w systemie.
 * **Bezpieczeństwo:** Walidacja danych (express-validator), ochrona tras (Middleware) i weryfikacja uprawnień (właściciel vs admin).
 
@@ -23,32 +23,32 @@ Zakończono implementację rdzenia Backendowego, w tym:
 * **AI Integration:** OpenAI API / Gemini API (Planowane: generowanie waypointów na trasie)
 
 ## 📡 Backend API (Endpointy)
-
-### Uwierzytelnianie (`/api/auth`)
-| Metoda | Endpoint | Opis |
-| :--- | :--- | :--- |
-| POST | `/api/auth/register` | Rejestracja nowego użytkownika |
-| POST | `/api/auth/login` | Logowanie i zwrot tokena JWT |
-| GET | `/api/auth/profile` | Pobranie danych profilu (wymaga Tokena) |
+### Uwierzytelnianie i Profil (`/api/auth`)
+| Metoda | Endpoint | Opis | Uprawnienia |
+| :--- | :--- | :--- | :--- |
+| POST | `/api/auth/register` | Rejestracja nowego użytkownika | Publiczne |
+| POST | `/api/auth/login` | Logowanie i zwrot tokena JWT | Publiczne |
+| GET | `/api/auth/profile` | Pobranie danych profilu | Użytkownik |
+| PUT | `/api/auth/profile` | Aktualizacja danych własnego profilu | Użytkownik |
 
 ### Wycieczki (`/api/trips`) - *Wymagają tokena Bearer*
 | Metoda | Endpoint | Opis | Uprawnienia |
 | :--- | :--- | :--- | :--- |
-| GET | `/api/trips` | Pobranie własnych wycieczek z posortowanymi przystankami | Użytkownik |
-| GET | `/api/trips/:id` | Szczegóły konkretnej wycieczki (A -> B + lista punktów) | User/Admin |
-| POST | `/api/trips` | Utworzenie trasy od punktu A do punktu B | Użytkownik |
-| DELETE | `/api/trips/:id` | Usunięcie wycieczki (**Usuwa kaskadowo wszystkie waypointy**) | User/Admin |
-| GET | `/api/trips/admin/all` | Globalny podgląd wszystkich wycieczek w systemie | **Admin** |
+| GET | `/api/trips` | Pobranie własnych wycieczek z przystankami | Użytkownik |
+| GET | `/api/trips/:id` | Szczegóły konkretnej wycieczki | User/Admin |
+| POST | `/api/trips` | Utworzenie nowej wycieczki | Użytkownik |
+| PUT | `/api/trips/:id` | Edycja danych wycieczki (tytuł, budżet itp.) | User/Admin |
+| DELETE | `/api/trips/:id` | Usunięcie wycieczki (Kaskadowo usuwa punkty) | User/Admin |
+| GET | `/api/trips/admin/all` | Globalny podgląd wszystkich wycieczek | **Admin** |
 
 ### Punkty trasy / Przystanki (`/api/trips/.../waypoints`)
 | Metoda | Endpoint | Opis | Uprawnienia |
 | :--- | :--- | :--- | :--- |
 | GET | `/api/trips/:tripId/waypoints` | Lista przystanków dla danej wycieczki | User/Admin |
-| POST | `/api/trips/:tripId/waypoints` | Dodanie przystanku (nazwa, koordynaty, opis, kolejność) | Użytkownik |
-| PUT | `/api/trips/waypoints/:id` | Aktualizacja punktu (np. oznaczenie jako **visited**) | Użytkownik |
-| DELETE | `/api/trips/waypoints/:id` | Usunięcie pojedynczego punktu z trasy | User/Admin |
-| DELETE | `/api/trips/:tripId/waypoints` | Usunięcie **wszystkich** punktów dla danej wycieczki | User/Admin |
-| GET | `/api/trips/admin/all/waypoints` | Globalny podgląd wszystkich przystanków w bazie | **Admin** |
+| POST | `/api/trips/:tripId/waypoints` | Dodanie przystanku do trasy | Użytkownik |
+| PUT | `/api/trips/waypoints/:id` | Aktualizacja punktu (np. visited: true) | Użytkownik |
+| DELETE | `/api/trips/waypoints/:id` | Usunięcie pojedynczego punktu | User/Admin |
+| GET | `/api/trips/admin/all/waypoints` | Podgląd wszystkich przystanków w systemie | **Admin** |
 
 ### Zarządzanie użytkownikami (`/api/users`) - *Tylko dla Administratora*
 | Metoda | Endpoint | Opis |
@@ -56,7 +56,7 @@ Zakończono implementację rdzenia Backendowego, w tym:
 | GET | `/api/users` | Lista wszystkich zarejestrowanych użytkowników |
 | GET | `/api/users/stats` | Statystyki (liczba użytkowników i aktywnych wycieczek) |
 | PUT | `/api/users/:id/role` | Zmiana uprawnień (User <-> Admin) |
-| DELETE | `/api/users/:id` | Usunięcie konta użytkownika |
+| DELETE | `/api/users/:id` | Usunięcie konta (Kaskadowo usuwa wycieczki i punkty) |
 
 ## 📂 Struktura Projektu
 * `/web` - Aplikacja webowa (React)

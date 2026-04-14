@@ -2,6 +2,42 @@ const User = require('../models/User');
 const Trip = require('../models/Trip');
 const Waypoint = require('../models/Waypoint'); // Import konieczny do czyszczenia przystanków
 
+// @desc    Aktualizacja profilu zalogowanego użytkownika
+// @route   PUT /api/auth/profile
+// @access  Private
+exports.updateProfile = async (req, res) => {
+    try {
+        // Pobieramy dane z body, które chcemy pozwolić edytować
+        const fieldsToUpdate = {
+            username: req.body.username,
+            email: req.body.email,
+            // Jeśli zdecydowałeś się dodać imię/nazwisko w modelu, odkomentuj poniższe:
+            // firstName: req.body.firstName,
+            // lastName: req.body.lastName
+        };
+
+        // Usuwamy z obiektu pola, które są undefined (użytkownik ich nie wysłał)
+        Object.keys(fieldsToUpdate).forEach(
+            key => fieldsToUpdate[key] === undefined && delete fieldsToUpdate[key]
+        );
+
+        const user = await User.findByIdAndUpdate(req.user.id, fieldsToUpdate, {
+            new: true,           // Zwróć zaktualizowany dokument
+            runValidators: true  // Uruchom walidację modelu (np. czy email jest poprawny)
+        }).select('-password'); // Nie zwracaj hasła w odpowiedzi
+
+        res.status(200).json({
+            success: true,
+            message: "Profil został pomyślnie zaktualizowany",
+            data: user
+        });
+    } catch (err) {
+        // Jeśli np. email już istnieje w bazie, Mongoose wyrzuci błąd, który tu złapiemy
+        res.status(400).json({ success: false, error: err.message });
+    }
+};
+
+
 // @desc    Usuwanie użytkownika (Kaskadowe: Waypoints -> Trips -> User)
 // @route   DELETE /api/users/:id
 // @access  Private/Admin

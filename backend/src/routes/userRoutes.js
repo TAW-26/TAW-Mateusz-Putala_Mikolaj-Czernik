@@ -9,6 +9,7 @@ const {
 const { protect } = require('../middleware/authMiddleware');
 const { authorize } = require('../middleware/roleMiddleware');
 
+// Wszystkie trasy poniżej wymagają bycia Adminem
 router.use(protect);
 router.use(authorize('admin'));
 

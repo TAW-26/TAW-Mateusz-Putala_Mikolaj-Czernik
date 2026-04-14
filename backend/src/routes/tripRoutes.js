@@ -5,6 +5,7 @@ const {
     createTrip,
     getTrips,
     getTrip,
+    updateTrip,
     deleteTrip,
     addWaypoint,
     getWaypointsByTrip,
@@ -12,7 +13,7 @@ const {
     deleteWaypoint,
     deleteAllWaypoints,
     getAllTripsAdmin,
-    getAllWaypointsAdmin // <--- Zaimportowane
+    getAllWaypointsAdmin
 } = require('../controllers/tripController');
 
 const { protect } = require('../middleware/authMiddleware');
@@ -42,6 +43,7 @@ router.route('/')
 
 router.route('/:id')
     .get(protect, getTrip)
+    .put(protect, updateTrip)
     .delete(protect, deleteTrip);
 
 // --- ZARZĄDZANIE PUNKTAMI TRASY (WAYPOINTS) ---

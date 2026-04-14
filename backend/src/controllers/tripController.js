@@ -49,6 +49,29 @@ exports.getTrip = async (req, res) => {
     }
 };
 
+// @desc    Aktualizuj wycieczkę (literówki, zmiana budżetu itp.)
+exports.updateTrip = async (req, res) => {
+    try {
+        let trip = await Trip.findById(req.params.id);
+
+        if (!trip) return res.status(404).json({ message: 'Nie znaleziono wycieczki' });
+
+        // Weryfikacja uprawnień
+        if (trip.user.toString() !== req.user.id && req.user.role !== 'admin') {
+            return res.status(401).json({ message: 'Brak uprawnień' });
+        }
+
+        trip = await Trip.findByIdAndUpdate(req.params.id, req.body, {
+            new: true,
+            runValidators: true
+        });
+
+        res.status(200).json({ success: true, data: trip });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+};
+
 // @desc    Usuń wycieczkę (KASKADOWO: usuwa też wszystkie waypointy tej wycieczki)
 exports.deleteTrip = async (req, res) => {
     try {
