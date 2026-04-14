@@ -1,10 +1,20 @@
 const express = require('express');
 const router = express.Router();
-const { deleteUser } = require('../controllers/userController');
+const {
+    deleteUser,
+    getSystemStats,
+    updateUserRole,
+    getAllUsers
+} = require('../controllers/userController');
 const { protect } = require('../middleware/authMiddleware');
 const { authorize } = require('../middleware/roleMiddleware');
 
-// Tylko zalogowany Admin może usuwać użytkowników
-router.delete('/:id', protect, authorize('admin'), deleteUser);
+router.use(protect);
+router.use(authorize('admin'));
+
+router.get('/', getAllUsers);
+router.get('/stats', getSystemStats);
+router.put('/:id/role', updateUserRole);
+router.delete('/:id', deleteUser);
 
 module.exports = router;

@@ -1,5 +1,5 @@
 const Trip = require('../models/Trip');
-const Waypoint = require('../models/Waypoint'); // Dodano import modelu Waypoint
+const Waypoint = require('../models/Waypoint');
 
 // @desc    Utwórz nową wycieczkę
 exports.createTrip = async (req, res) => {
@@ -26,15 +26,16 @@ exports.getTrips = async (req, res) => {
     }
 };
 
-// @desc    Usuń wycieczkę (z weryfikacją właściciela)
+// @desc    Usuń wycieczkę (z weryfikacją właściciela LUB rolą admina)
 exports.deleteTrip = async (req, res) => {
     try {
         const trip = await Trip.findById(req.params.id);
 
         if (!trip) return res.status(404).json({ message: 'Nie znaleziono wycieczki' });
 
-        // Sprawdzenie czy użytkownik jest właścicielem
-        if (trip.user.toString() !== req.user.id) {
+        // --- ZMIANA TUTAJ ---
+        // Pozwalamy na usunięcie jeśli: użytkownik jest właścicielem LUB jest adminem
+        if (trip.user.toString() !== req.user.id && req.user.role !== 'admin') {
             return res.status(401).json({ message: 'Brak uprawnień do usunięcia tej wycieczki' });
         }
 
@@ -45,7 +46,7 @@ exports.deleteTrip = async (req, res) => {
     }
 };
 
-// @desc    Dodaj punkt trasy do wycieczki (implementacja relacji z diagramu UML)
+// @desc    Dodaj punkt trasy do wycieczki
 exports.addWaypoint = async (req, res) => {
     try {
         const trip = await Trip.findById(req.params.tripId);
@@ -54,8 +55,8 @@ exports.addWaypoint = async (req, res) => {
             return res.status(404).json({ success: false, message: 'Nie znaleziono wycieczki' });
         }
 
-        // Weryfikacja, czy użytkownik dodaje punkt do własnej wycieczki
-        if (trip.user.toString() !== req.user.id) {
+        // Tutaj też warto dodać sprawdzanie roli, jeśli admin miałby pomagać w edycji
+        if (trip.user.toString() !== req.user.id && req.user.role !== 'admin') {
             return res.status(401).json({ success: false, message: 'Brak uprawnień do edycji tej wycieczki' });
         }
 
@@ -67,5 +68,20 @@ exports.addWaypoint = async (req, res) => {
         res.status(201).json({ success: true, data: waypoint });
     } catch (err) {
         res.status(400).json({ success: false, error: err.message });
+    }
+};
+
+// @desc    Pobranie wszystkich wycieczek w systemie (tylko dla Admina)
+exports.getAllTripsAdmin = async (req, res) => {
+    try {
+        const trips = await Trip.find().populate('user', 'username email');
+
+        res.status(200).json({
+            success: true,
+            count: trips.length,
+            data: trips
+        });
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message });
     }
 };

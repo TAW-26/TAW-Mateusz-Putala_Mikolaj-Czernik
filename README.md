@@ -7,9 +7,10 @@ na podstawie budżetu i zainteresowań, a w trakcie podróży pełni rolę asyst
 ## 🚀 Stan projektu
 Zakończono implementację rdzenia Backendowego, w tym:
 * **Integracja z bazą danych:** Pełna komunikacja z MongoDB Atlas.
-* **Autoryzacja:** System logowania i rejestracji oparty na JWT (JSON Web Token) oraz szyfrowaniu haseł (bcrypt).
+* **Autoryzacja i Role (RBAC):** Zaawansowany system ról (User, Admin). Logowanie i rejestracja oparte na JWT oraz szyfrowaniu haseł (bcrypt).
+* **Zarządzanie Użytkownikami:** Panel administracyjny pozwalający na modyfikację uprawnień, przegląd statystyk oraz moderację kont.
 * **Logika biznesowa:** CRUD wycieczek z automatycznym wyliczaniem czasu trwania (`virtuals`) oraz implementacja relacyjnych punktów trasy (**Waypoints**).
-* **Bezpieczeństwo:** Globalna obsługa błędów (middleware) oraz ochrona tras przed nieautoryzowanym dostępem.
+* **Bezpieczeństwo:** Globalna obsługa błędów, walidacja danych (express-validator) oraz ochrona tras (Middleware) z podziałem na role.
 
 ## 🛠 Technologie
 * **Backend:** Node.js, Express, JWT, MongoDB (Atlas), Mongoose
@@ -27,11 +28,12 @@ Zakończono implementację rdzenia Backendowego, w tym:
 | GET | `/api/auth/profile` | Pobranie danych profilu (wymaga Tokena) |
 
 ### Wycieczki (`/api/trips`) - *Wymagają nagłówka Authorization: Bearer <token>*
-| Metoda | Endpoint | Opis |
-| :--- | :--- | :--- |
-| GET | `/api/trips` | Pobranie listy wycieczek wraz z przypisanymi punktami (Waypoints) |
-| POST | `/api/trips` | Dodanie nowej wycieczki (z walidacją budżetu i pól) |
-| DELETE | `/api/trips/:id` | Usunięcie wycieczki (z weryfikacją właściciela) |
+| Metoda | Endpoint | Opis | Uprawnienia |
+| :--- | :--- | :--- | :--- |
+| GET | `/api/trips` | Pobranie listy własnych wycieczek | Użytkownik |
+| GET | `/api/trips/admin/all` | Globalny podgląd wszystkich wycieczek w systemie | **Admin** |
+| POST | `/api/trips` | Dodanie nowej wycieczki (z walidacją budżetu) | Użytkownik |
+| DELETE | `/api/trips/:id` | Usunięcie wycieczki (weryfikacja właściciela) | Użytkownik |
 
 ### Punkty trasy (`/api/trips/:tripId/waypoints`)
 | Metoda | Endpoint | Opis |
@@ -41,6 +43,9 @@ Zakończono implementację rdzenia Backendowego, w tym:
 ### Zarządzanie użytkownikami (`/api/users`) - *Tylko dla Administratora*
 | Metoda | Endpoint | Opis |
 | :--- | :--- | :--- |
+| GET | `/api/users` | Pobranie listy wszystkich zarejestrowanych użytkowników |
+| GET | `/api/users/stats` | Statystyki systemu (liczba użytkowników, liczba wycieczek) |
+| PUT | `/api/users/:id/role` | Zmiana roli użytkownika (np. nadanie uprawnień Admina) |
 | DELETE | `/api/users/:id` | Usunięcie konta użytkownika (z blokadą usunięcia Super Admina) |
 
 ## 📂 Struktura Projektu
@@ -57,11 +62,10 @@ Zakończono implementację rdzenia Backendowego, w tym:
 3. Skonfiguruj plik `.env` (wymagane: `MONGO_URI`, `JWT_SECRET`)
 4. Zainicjalizuj konto Administratora (Super Admina): `npm run seed:admin`
 
-    Dane logowania: superadmin@voyager.pl / TajneHaslo123!
+   Dane logowania: **superadmin@voyager.pl** / **TajneHaslo123!**
 
 5. Uruchom serwer: `npm run dev`
 
-    
 
 ### Frontend Web
 1. Przejdź do folderu: `cd web`
