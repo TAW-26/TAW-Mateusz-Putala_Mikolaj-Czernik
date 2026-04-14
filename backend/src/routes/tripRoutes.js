@@ -4,12 +4,19 @@ const router = express.Router();
 const {
     createTrip,
     getTrips,
+    getTrip,
     deleteTrip,
     addWaypoint,
-    getAllTripsAdmin // <--- DODANO: import nowej funkcji dla admina
+    getWaypointsByTrip,
+    updateWaypoint,
+    deleteWaypoint,
+    deleteAllWaypoints,
+    getAllTripsAdmin,
+    getAllWaypointsAdmin // <--- Zaimportowane
 } = require('../controllers/tripController');
+
 const { protect } = require('../middleware/authMiddleware');
-const { authorize } = require('../middleware/roleMiddleware'); // <--- DODANO: middleware ról
+const { authorize } = require('../middleware/roleMiddleware');
 
 // Middleware do łapania błędów walidacji
 const validate = (req, res, next) => {
@@ -21,25 +28,36 @@ const validate = (req, res, next) => {
 };
 
 // --- TRASY ADMINISTRACYJNE ---
-// Ta trasa musi być przed trasami z /:id, aby Express nie pomylił "admin/all" z "ID wycieczki"
 router.get('/admin/all', protect, authorize('admin'), getAllTripsAdmin);
+router.get('/admin/all/waypoints', protect, authorize('admin'), getAllWaypointsAdmin); // <--- DODANO: Nowa trasa admina
 
-// --- TRASY UŻYTKOWNIKA ---
+// --- TRASY UŻYTKOWNIKA (WYCIECZKI) ---
 router.route('/')
     .get(protect, getTrips)
     .post(protect, [
         body('title').notEmpty().withMessage('Tytuł nie może być pusty'),
-        body('destination').notEmpty().withMessage('Cel podróży jest wymagany'),
+        body('destination.address').notEmpty().withMessage('Cel podróży (adres) jest wymagany'),
         body('budget').isNumeric().withMessage('Budżet musi być liczbą')
     ], validate, createTrip);
 
 router.route('/:id')
+    .get(protect, getTrip)
     .delete(protect, deleteTrip);
 
-// Nowa trasa dla Waypointów
+// --- ZARZĄDZANIE PUNKTAMI TRASY (WAYPOINTS) ---
+
+// Trasa: /api/trips/:tripId/waypoints
 router.route('/:tripId/waypoints')
+    .get(protect, getWaypointsByTrip)
     .post(protect, [
-        body('name').notEmpty().withMessage('Nazwa punktu jest wymagana')
-    ], validate, addWaypoint);
+        body('name').notEmpty().withMessage('Nazwa punktu jest wymagana'),
+        body('order_index').optional().isNumeric().withMessage('Kolejność musi być liczbą')
+    ], validate, addWaypoint)
+    .delete(protect, deleteAllWaypoints);
+
+// Trasa: /api/trips/waypoints/:id
+router.route('/waypoints/:id')
+    .put(protect, updateWaypoint)
+    .delete(protect, deleteWaypoint);
 
 module.exports = router;

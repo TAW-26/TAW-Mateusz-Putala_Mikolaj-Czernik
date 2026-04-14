@@ -1,7 +1,8 @@
 const User = require('../models/User');
 const Trip = require('../models/Trip');
+const Waypoint = require('../models/Waypoint'); // Import konieczny do czyszczenia przystanków
 
-// @desc    Usuwanie użytkownika
+// @desc    Usuwanie użytkownika (Kaskadowe: Waypoints -> Trips -> User)
 // @route   DELETE /api/users/:id
 // @access  Private/Admin
 exports.deleteUser = async (req, res) => {
@@ -12,6 +13,7 @@ exports.deleteUser = async (req, res) => {
             return res.status(404).json({ success: false, message: "Nie znaleziono użytkownika" });
         }
 
+        // Zabezpieczenie Super Admina
         if (user.email === 'superadmin@voyager.pl') {
             return res.status(403).json({
                 success: false,
@@ -19,8 +21,29 @@ exports.deleteUser = async (req, res) => {
             });
         }
 
+        // --- START KASKADY ---
+
+        // 1. Znajdź ID wszystkich wycieczek należących do tego użytkownika
+        const userTrips = await Trip.find({ user: req.params.id });
+        const tripIds = userTrips.map(trip => trip._id);
+
+        // 2. Usuń wszystkie waypointy powiązane z tymi wycieczkami
+        if (tripIds.length > 0) {
+            await Waypoint.deleteMany({ trip: { $in: tripIds } });
+        }
+
+        // 3. Usuń wszystkie wycieczki tego użytkownika
+        await Trip.deleteMany({ user: req.params.id });
+
+        // 4. Usuń samego użytkownika
         await User.findByIdAndDelete(req.params.id);
-        res.status(200).json({ success: true, message: "Użytkownik usunięty pomyślnie" });
+
+        // --- KONIEC KASKADY ---
+
+        res.status(200).json({
+            success: true,
+            message: "Użytkownik oraz wszystkie powiązane wycieczki i punkty trasy zostały usunięte"
+        });
     } catch (err) {
         res.status(500).json({ success: false, error: err.message });
     }
@@ -82,14 +105,11 @@ exports.updateUserRole = async (req, res) => {
     }
 };
 
-// --- NOWA FUNKCJA ---
-
 // @desc    Pobranie listy wszystkich użytkowników
 // @route   GET /api/users
 // @access  Private/Admin
 exports.getAllUsers = async (req, res) => {
     try {
-        // .select('-password') sprawia, że pole password nie zostanie wysłane
         const users = await User.find().select('-password');
 
         res.status(200).json({

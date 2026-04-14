@@ -11,9 +11,17 @@ const tripSchema = new mongoose.Schema({
         required: [true, 'Tytuł wycieczki jest wymagany'],
         trim: true
     },
+    // PUNKT A: Start
+    origin: {
+        address: { type: String, default: 'Obecna lokalizacja' },
+        lat: { type: Number },
+        lng: { type: Number }
+    },
+    // PUNKT B: Cel
     destination: {
-        type: String,
-        required: [true, 'Cel podróży jest wymagany']
+        address: { type: String, required: [true, 'Cel podróży jest wymagany'] },
+        lat: { type: Number },
+        lng: { type: Number }
     },
     startDate: { type: Date },
     endDate: { type: Date },
@@ -34,7 +42,7 @@ const tripSchema = new mongoose.Schema({
     toObject: { virtuals: true }
 });
 
-// Wirtualne pole obliczające czas trwania wycieczki w dniach
+// Czas trwania
 tripSchema.virtual('duration').get(function() {
     if (this.startDate && this.endDate) {
         const diffInMs = Math.abs(this.endDate - this.startDate);
@@ -43,6 +51,7 @@ tripSchema.virtual('duration').get(function() {
     return 0;
 });
 
+// Relacja z punktami trasy
 tripSchema.virtual('waypoints', {
     ref: 'Waypoint',
     localField: '_id',

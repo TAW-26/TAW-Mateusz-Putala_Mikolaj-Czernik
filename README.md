@@ -8,15 +8,19 @@ na podstawie budżetu i zainteresowań, a w trakcie podróży pełni rolę asyst
 Zakończono implementację rdzenia Backendowego, w tym:
 * **Integracja z bazą danych:** Pełna komunikacja z MongoDB Atlas.
 * **Autoryzacja i Role (RBAC):** Zaawansowany system ról (User, Admin). Logowanie i rejestracja oparte na JWT oraz szyfrowaniu haseł (bcrypt).
-* **Zarządzanie Użytkownikami:** Panel administracyjny pozwalający na modyfikację uprawnień, przegląd statystyk oraz moderację kont.
-* **Logika biznesowa:** CRUD wycieczek z automatycznym wyliczaniem czasu trwania (`virtuals`) oraz implementacja relacyjnych punktów trasy (**Waypoints**).
-* **Bezpieczeństwo:** Globalna obsługa błędów, walidacja danych (express-validator) oraz ochrona tras (Middleware) z podziałem na role.
+* **Smart Routing (AI-Ready):** Model trasy od punktu A (Origin) do punktu B (Destination) z obsługą geolokalizacji.
+* **Zaawansowana Logika Biznesowa:** * CRUD wycieczek z automatycznym wyliczaniem czasu trwania (`virtuals`).
+    * Obsługa przystanków (**Waypoints**) z zachowaniem kolejności (`order_index`).
+    * **Kaskadowe Usuwanie:** Usunięcie wycieczki automatycznie czyści wszystkie powiązane z nią przystanki w bazie danych.
+* **Panel Administracyjny:** Globalny wgląd w użytkowników, statystyki oraz pełną bazę wszystkich przystanków w systemie.
+* **Bezpieczeństwo:** Walidacja danych (express-validator), ochrona tras (Middleware) i weryfikacja uprawnień (właściciel vs admin).
 
 ## 🛠 Technologie
 * **Backend:** Node.js, Express, JWT, MongoDB (Atlas), Mongoose
+* **Walidacja:** Express-Validator
 * **Frontend Web:** React, TypeScript, Axios
 * **Frontend Mobile:** React Native (Expo), TypeScript, Zustand
-* **AI Integration:** OpenAI API / Gemini API
+* **AI Integration:** OpenAI API / Gemini API (Planowane: generowanie waypointów na trasie)
 
 ## 📡 Backend API (Endpointy)
 
@@ -27,45 +31,48 @@ Zakończono implementację rdzenia Backendowego, w tym:
 | POST | `/api/auth/login` | Logowanie i zwrot tokena JWT |
 | GET | `/api/auth/profile` | Pobranie danych profilu (wymaga Tokena) |
 
-### Wycieczki (`/api/trips`) - *Wymagają nagłówka Authorization: Bearer <token>*
+### Wycieczki (`/api/trips`) - *Wymagają tokena Bearer*
 | Metoda | Endpoint | Opis | Uprawnienia |
 | :--- | :--- | :--- | :--- |
-| GET | `/api/trips` | Pobranie listy własnych wycieczek | Użytkownik |
+| GET | `/api/trips` | Pobranie własnych wycieczek z posortowanymi przystankami | Użytkownik |
+| GET | `/api/trips/:id` | Szczegóły konkretnej wycieczki (A -> B + lista punktów) | User/Admin |
+| POST | `/api/trips` | Utworzenie trasy od punktu A do punktu B | Użytkownik |
+| DELETE | `/api/trips/:id` | Usunięcie wycieczki (**Usuwa kaskadowo wszystkie waypointy**) | User/Admin |
 | GET | `/api/trips/admin/all` | Globalny podgląd wszystkich wycieczek w systemie | **Admin** |
-| POST | `/api/trips` | Dodanie nowej wycieczki (z walidacją budżetu) | Użytkownik |
-| DELETE | `/api/trips/:id` | Usunięcie wycieczki (weryfikacja właściciela) | Użytkownik |
 
-### Punkty trasy (`/api/trips/:tripId/waypoints`)
-| Metoda | Endpoint | Opis |
-| :--- | :--- | :--- |
-| POST | `/api/trips/:tripId/waypoints` | Dodanie punktu (miejsce, współrzędne, opis) do konkretnej wycieczki |
+### Punkty trasy / Przystanki (`/api/trips/.../waypoints`)
+| Metoda | Endpoint | Opis | Uprawnienia |
+| :--- | :--- | :--- | :--- |
+| GET | `/api/trips/:tripId/waypoints` | Lista przystanków dla danej wycieczki | User/Admin |
+| POST | `/api/trips/:tripId/waypoints` | Dodanie przystanku (nazwa, koordynaty, opis, kolejność) | Użytkownik |
+| PUT | `/api/trips/waypoints/:id` | Aktualizacja punktu (np. oznaczenie jako **visited**) | Użytkownik |
+| DELETE | `/api/trips/waypoints/:id` | Usunięcie pojedynczego punktu z trasy | User/Admin |
+| DELETE | `/api/trips/:tripId/waypoints` | Usunięcie **wszystkich** punktów dla danej wycieczki | User/Admin |
+| GET | `/api/trips/admin/all/waypoints` | Globalny podgląd wszystkich przystanków w bazie | **Admin** |
 
 ### Zarządzanie użytkownikami (`/api/users`) - *Tylko dla Administratora*
 | Metoda | Endpoint | Opis |
 | :--- | :--- | :--- |
-| GET | `/api/users` | Pobranie listy wszystkich zarejestrowanych użytkowników |
-| GET | `/api/users/stats` | Statystyki systemu (liczba użytkowników, liczba wycieczek) |
-| PUT | `/api/users/:id/role` | Zmiana roli użytkownika (np. nadanie uprawnień Admina) |
-| DELETE | `/api/users/:id` | Usunięcie konta użytkownika (z blokadą usunięcia Super Admina) |
+| GET | `/api/users` | Lista wszystkich zarejestrowanych użytkowników |
+| GET | `/api/users/stats` | Statystyki (liczba użytkowników i aktywnych wycieczek) |
+| PUT | `/api/users/:id/role` | Zmiana uprawnień (User <-> Admin) |
+| DELETE | `/api/users/:id` | Usunięcie konta użytkownika |
 
 ## 📂 Struktura Projektu
 * `/web` - Aplikacja webowa (React)
 * `/mobile` - Aplikacja mobilna (React Native)
 * `/backend` - Serwer API (Node.js)
-* `/docs` - Dokumentacja projektowa
+* `/docs` - Dokumentacja projektowa i schematy UML
 
 ## ⚙️ Instalacja i uruchomienie (Środowisko Dev)
 
 ### Backend
 1. Przejdź do folderu: `cd backend`
 2. Zainstaluj zależności: `npm install`
-3. Skonfiguruj plik `.env` (wymagane: `MONGO_URI`, `JWT_SECRET`)
-4. Zainicjalizuj konto Administratora (Super Admina): `npm run seed:admin`
-
-   Dane logowania: **superadmin@voyager.pl** / **TajneHaslo123!**
-
+3. Skonfiguruj plik `.env` (`MONGO_URI`, `JWT_SECRET`)
+4. Zainicjalizuj konto Administratora: `npm run seed:admin`
+    * Domyślne dane: `admin@voyager.pl` / `Haslo123!`
 5. Uruchom serwer: `npm run dev`
-
 
 ### Frontend Web
 1. Przejdź do folderu: `cd web`
