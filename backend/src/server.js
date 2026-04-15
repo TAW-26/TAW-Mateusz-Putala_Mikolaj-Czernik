@@ -38,7 +38,7 @@ app.get('/', (req, res) => {
     res.send('API Voyager śmiga! 🚀');
 });
 
-// Middleware do obsługi błędów (musi być na końcu tras)
+// Middleware do obsługi błędów
 app.use(errorHandler);
 
 // Uruchomienie serwera

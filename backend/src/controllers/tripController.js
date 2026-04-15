@@ -1,7 +1,9 @@
 const Trip = require('../models/Trip');
 const Waypoint = require('../models/Waypoint');
+const aiService = require('../services/aiService');
+const User = require('../models/User');
 
-// @desc    Utwórz nową wycieczkę (A -> B) - obsługuje teraz aiSettings z automatu
+// @desc    Utwórz nową wycieczkę (A -> B) - obsługuje aiSettings z automatu
 exports.createTrip = async (req, res) => {
     try {
         const trip = await Trip.create({
@@ -61,7 +63,6 @@ exports.updateTrip = async (req, res) => {
             return res.status(401).json({ message: 'Brak uprawnień' });
         }
 
-        // req.body przyjmie nowe aiSettings i zwaliduje je z modelem Trip.js
         trip = await Trip.findByIdAndUpdate(req.params.id, req.body, {
             new: true,
             runValidators: true
@@ -207,5 +208,37 @@ exports.getAllWaypointsAdmin = async (req, res) => {
         });
     } catch (err) {
         res.status(500).json({ success: false, error: err.message });
+    }
+};
+
+exports.generateAITrip = async (req, res) => {
+    try {
+        const trip = await Trip.findById(req.params.id);
+        const user = await User.findById(req.user.id);
+
+        if (!trip) return res.status(404).json({ message: "Nie znaleziono wycieczki" });
+
+        // Wywołanie AI
+        const suggestedPoints = await aiService.generateWaypoints(trip, user);
+
+        // Wyczyszczenie starych punktów, jeśli istniały
+        await Waypoint.deleteMany({ trip: trip._id });
+
+        // Zapisanie nowych punktów do bazy
+        const createdWaypoints = await Promise.all(suggestedPoints.map(point => {
+            return Waypoint.create({
+                ...point,
+                trip: trip._id
+            });
+        }));
+
+        res.status(200).json({
+            success: true,
+            message: "AI wygenerowało trasę pomyślnie",
+            data: createdWaypoints
+        });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ success: false, error: "AI nie mogło wygenerować trasy. Spróbuj ponownie." });
     }
 };

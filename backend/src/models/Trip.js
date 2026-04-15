@@ -41,19 +41,19 @@ const tripSchema = new mongoose.Schema({
             type: Number,
             min: 1,
             max: 5,
-            default: 3 // 1: Powolne, 5: Bardzo intensywne
+            default: 3
         },
         extraTimeTolerance: {
             type: Number,
             min: 0,
             max: 100,
-            default: 20 // Ile % drogi/czasu użytkownik może nadłożyć
+            default: 20
         },
         numberOfPoints: {
             type: Number,
             min: 1,
             max: 10,
-            default: 5 // Ile punktów AI ma zaproponować
+            default: 5
         }
     }
 }, {

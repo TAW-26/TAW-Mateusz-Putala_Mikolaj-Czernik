@@ -13,7 +13,8 @@ const {
     deleteWaypoint,
     deleteAllWaypoints,
     getAllTripsAdmin,
-    getAllWaypointsAdmin
+    getAllWaypointsAdmin,
+    generateAITrip
 } = require('../controllers/tripController');
 
 const { protect } = require('../middleware/authMiddleware');
@@ -38,12 +39,13 @@ router.route('/')
     .post(protect, [
         body('title').notEmpty().withMessage('Tytuł nie może być pusty'),
         body('destination.address').notEmpty().withMessage('Cel podróży (adres) jest wymagany'),
-        // Tutaj dodaliśmy .optional(), aby brak budżetu nie blokował stworzenia wycieczki
         body('budget')
             .optional({ checkFalsy: true })
             .isNumeric()
             .withMessage('Budżet musi być liczbą')
     ], validate, createTrip);
+
+router.post('/:id/generate', protect, generateAITrip);
 
 router.route('/:id')
     .get(protect, getTrip)

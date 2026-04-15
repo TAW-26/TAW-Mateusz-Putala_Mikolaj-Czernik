@@ -1,28 +1,23 @@
 const User = require('../models/User');
 const Trip = require('../models/Trip');
-const Waypoint = require('../models/Waypoint'); // Import konieczny do czyszczenia przystanków
+const Waypoint = require('../models/Waypoint');
 
-// @desc    Aktualizacja profilu zalogowanego użytkownika
-// @route   PUT /api/auth/profile
-// @access  Private
 exports.updateProfile = async (req, res) => {
     try {
-        // Pobieramy dane z body, które chcemy pozwolić edytować
         const fieldsToUpdate = {
             username: req.body.username,
             email: req.body.email,
             preferences: req.body.preferences
         };
 
-        // Usuwamy z obiektu pola, które są undefined (użytkownik ich nie wysłał)
         Object.keys(fieldsToUpdate).forEach(
             key => fieldsToUpdate[key] === undefined && delete fieldsToUpdate[key]
         );
 
         const user = await User.findByIdAndUpdate(req.user.id, fieldsToUpdate, {
-            new: true,           // Zwróć zaktualizowany dokument
-            runValidators: true  // Uruchom walidację modelu (np. czy email jest poprawny)
-        }).select('-password'); // Nie zwracaj hasła w odpowiedzi
+            new: true,
+            runValidators: true
+        }).select('-password');
 
         res.status(200).json({
             success: true,
@@ -30,15 +25,12 @@ exports.updateProfile = async (req, res) => {
             data: user
         });
     } catch (err) {
-        // Jeśli np. email już istnieje w bazie, Mongoose wyrzuci błąd, który tu złapiemy
+        // Jeśli np. email już istnieje w bazie, Mongoose wyrzuci błąd
         res.status(400).json({ success: false, error: err.message });
     }
 };
 
 
-// @desc    Usuwanie użytkownika (Kaskadowe: Waypoints -> Trips -> User)
-// @route   DELETE /api/users/:id
-// @access  Private/Admin
 exports.deleteUser = async (req, res) => {
     try {
         const user = await User.findById(req.params.id);
@@ -83,9 +75,7 @@ exports.deleteUser = async (req, res) => {
     }
 };
 
-// @desc    Pobranie statystyk systemu (Dashboard)
-// @route   GET /api/users/stats
-// @access  Private/Admin
+
 exports.getSystemStats = async (req, res) => {
     try {
         const userCount = await User.countDocuments();
@@ -105,9 +95,7 @@ exports.getSystemStats = async (req, res) => {
     }
 };
 
-// @desc    Zmiana roli użytkownika
-// @route   PUT /api/users/:id/role
-// @access  Private/Admin
+
 exports.updateUserRole = async (req, res) => {
     try {
         const { role } = req.body;
@@ -139,9 +127,7 @@ exports.updateUserRole = async (req, res) => {
     }
 };
 
-// @desc    Pobranie listy wszystkich użytkowników
-// @route   GET /api/users
-// @access  Private/Admin
+
 exports.getAllUsers = async (req, res) => {
     try {
         const users = await User.find().select('-password');

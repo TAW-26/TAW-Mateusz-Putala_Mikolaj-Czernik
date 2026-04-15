@@ -9,7 +9,6 @@ router.post('/register', register);
 router.post('/login', login);
 
 // Ścieżki prywatne (wymagają zalogowania)
-// Tutaj możesz mieć też GET /profile, jeśli go używasz
 router.put('/profile', protect, updateProfile);
 
 module.exports = router;

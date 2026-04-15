@@ -1,5 +1,5 @@
 const jwt = require('jsonwebtoken');
-const User = require('../models/User'); // Dodano import modelu User
+const User = require('../models/User');
 
 const protect = async (req, res, next) => {
     let token;
@@ -10,8 +10,6 @@ const protect = async (req, res, next) => {
 
             const decoded = jwt.verify(token, process.env.JWT_SECRET || 'supersecretkey');
 
-            // ZMIANA: Pobieramy użytkownika z bazy po ID z tokena, wykluczając hasło.
-            // Dzięki temu req.user będzie zawierało pole .role potrzebne dla roleMiddleware.
             req.user = await User.findById(decoded.id).select('-password');
 
             if (!req.user) {
