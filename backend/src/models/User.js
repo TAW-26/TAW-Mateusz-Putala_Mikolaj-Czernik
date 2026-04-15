@@ -17,28 +17,50 @@ const UserSchema = new mongoose.Schema({
         type: String,
         required: [true, 'Hasło jest wymagane'],
         minlength: 6,
-        select: false // Hasło nie będzie domyślnie zwracane w zapytaniach GET
+        select: false
     },
     role: {
         type: String,
         enum: ['user', 'admin'],
         default: 'user'
+    },
+    // --- NOWA SEKCJA PREFERENCJI DLA AI ---
+    preferences: {
+        interests: {
+            type: [String],
+            enum: [
+                'architektura_zabytkowa', 'architektura_nowoczesna',
+                'muzea_sztuki', 'muzea_techniki', 'historia_wojenna',
+                'parki_narodowe', 'góry', 'jeziora_i_rzeki',
+                'punkty_widokowe', 'fotografia',
+                'kuchnia_lokalna', 'street_food', 'kawiarnie',
+                'winiarnie_browary', 'opcje_wege'
+            ],
+            default: []
+        },
+        travelStyle: {
+            avoidPaidAttractions: { type: Boolean, default: false },
+            onlyHiddenGems: { type: Boolean, default: false },
+            kidFriendly: { type: Boolean, default: false },
+            disabilityAccess: { type: Boolean, default: false },
+            preferWalking: { type: Boolean, default: false }
+        },
+        personalNotes: {
+            type: String,
+            maxlength: 500,
+            default: ""
+        }
     }
 }, { timestamps: true });
 
-// Szyfrowanie hasła przed zapisem
 UserSchema.pre('save', async function () {
-    // Jeśli hasło nie zostało zmodyfikowane, przerywamy działanie funkcji
     if (!this.isModified('password')) {
         return;
     }
-
-    // W funkcjach async w Mongoose nie używamy już parametru 'next'
     const salt = await bcrypt.genSalt(10);
     this.password = await bcrypt.hash(this.password, salt);
 });
 
-// Metoda do porównywania haseł
 UserSchema.methods.matchPassword = async function (enteredPassword) {
     return await bcrypt.compare(enteredPassword, this.password);
 };

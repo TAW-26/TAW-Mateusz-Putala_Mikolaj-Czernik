@@ -1,7 +1,7 @@
 const Trip = require('../models/Trip');
 const Waypoint = require('../models/Waypoint');
 
-// @desc    Utwórz nową wycieczkę (A -> B)
+// @desc    Utwórz nową wycieczkę (A -> B) - obsługuje teraz aiSettings z automatu
 exports.createTrip = async (req, res) => {
     try {
         const trip = await Trip.create({
@@ -49,7 +49,7 @@ exports.getTrip = async (req, res) => {
     }
 };
 
-// @desc    Aktualizuj wycieczkę (literówki, zmiana budżetu itp.)
+// @desc    Aktualizuj wycieczkę (w tym suwaki aiSettings)
 exports.updateTrip = async (req, res) => {
     try {
         let trip = await Trip.findById(req.params.id);
@@ -61,6 +61,7 @@ exports.updateTrip = async (req, res) => {
             return res.status(401).json({ message: 'Brak uprawnień' });
         }
 
+        // req.body przyjmie nowe aiSettings i zwaliduje je z modelem Trip.js
         trip = await Trip.findByIdAndUpdate(req.params.id, req.body, {
             new: true,
             runValidators: true
@@ -78,18 +79,12 @@ exports.deleteTrip = async (req, res) => {
         const trip = await Trip.findById(req.params.id);
         if (!trip) return res.status(404).json({ message: 'Nie znaleziono wycieczki' });
 
-        // Weryfikacja uprawnień
         if (trip.user.toString() !== req.user.id && req.user.role !== 'admin') {
             return res.status(401).json({ message: 'Brak uprawnień' });
         }
 
-        // --- START KASKADY ---
-        // Usuwamy wszystkie punkty trasy przypisane do tej wycieczki
         await Waypoint.deleteMany({ trip: req.params.id });
-
-        // Usuwamy samą wycieczkę
         await trip.deleteOne();
-        // --- KONIEC KASKADY ---
 
         res.status(200).json({
             success: true,
@@ -100,9 +95,8 @@ exports.deleteTrip = async (req, res) => {
     }
 };
 
-// --- LOGIKA WAYPOINTS ---
+// --- LOGIKA WAYPOINTS (PRZYSTANKÓW) ---
 
-// @desc    Pobierz wszystkie przystanki dla konkretnej wycieczki
 exports.getWaypointsByTrip = async (req, res) => {
     try {
         const trip = await Trip.findById(req.params.tripId);
@@ -119,7 +113,6 @@ exports.getWaypointsByTrip = async (req, res) => {
     }
 };
 
-// @desc    Dodaj przystanek (Waypoint)
 exports.addWaypoint = async (req, res) => {
     try {
         const trip = await Trip.findById(req.params.tripId);
@@ -139,7 +132,6 @@ exports.addWaypoint = async (req, res) => {
     }
 };
 
-// @desc    Aktualizuj przystanek (np. oznacz jako odwiedzony)
 exports.updateWaypoint = async (req, res) => {
     try {
         let waypoint = await Waypoint.findById(req.params.id).populate('trip');
@@ -160,7 +152,6 @@ exports.updateWaypoint = async (req, res) => {
     }
 };
 
-// @desc    Usuń pojedynczy przystanek
 exports.deleteWaypoint = async (req, res) => {
     try {
         const waypoint = await Waypoint.findById(req.params.id).populate('trip');
@@ -177,7 +168,6 @@ exports.deleteWaypoint = async (req, res) => {
     }
 };
 
-// @desc    Usuń WSZYSTKIE punkty dla konkretnej wycieczki (manualny reset trasy)
 exports.deleteAllWaypoints = async (req, res) => {
     try {
         const trip = await Trip.findById(req.params.tripId);
@@ -198,7 +188,6 @@ exports.deleteAllWaypoints = async (req, res) => {
     }
 };
 
-// @desc    Admin: Wszystkie wycieczki
 exports.getAllTripsAdmin = async (req, res) => {
     try {
         const trips = await Trip.find().populate('user', 'username email');
@@ -208,15 +197,9 @@ exports.getAllTripsAdmin = async (req, res) => {
     }
 };
 
-
-// @desc    Admin: Pobranie wszystkich waypointów ze wszystkich wycieczek
-// @route   GET /api/waypoints/admin/all
-// @access  Private/Admin
 exports.getAllWaypointsAdmin = async (req, res) => {
     try {
-        // .populate('trip', 'title') pozwoli adminowi zobaczyć, do której wycieczki należy dany punkt
         const waypoints = await Waypoint.find().populate('trip', 'title');
-
         res.status(200).json({
             success: true,
             count: waypoints.length,

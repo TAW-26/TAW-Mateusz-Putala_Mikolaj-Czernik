@@ -30,7 +30,7 @@ const validate = (req, res, next) => {
 
 // --- TRASY ADMINISTRACYJNE ---
 router.get('/admin/all', protect, authorize('admin'), getAllTripsAdmin);
-router.get('/admin/all/waypoints', protect, authorize('admin'), getAllWaypointsAdmin); // <--- DODANO: Nowa trasa admina
+router.get('/admin/all/waypoints', protect, authorize('admin'), getAllWaypointsAdmin);
 
 // --- TRASY UŻYTKOWNIKA (WYCIECZKI) ---
 router.route('/')
@@ -38,7 +38,11 @@ router.route('/')
     .post(protect, [
         body('title').notEmpty().withMessage('Tytuł nie może być pusty'),
         body('destination.address').notEmpty().withMessage('Cel podróży (adres) jest wymagany'),
-        body('budget').isNumeric().withMessage('Budżet musi być liczbą')
+        // Tutaj dodaliśmy .optional(), aby brak budżetu nie blokował stworzenia wycieczki
+        body('budget')
+            .optional({ checkFalsy: true })
+            .isNumeric()
+            .withMessage('Budżet musi być liczbą')
     ], validate, createTrip);
 
 router.route('/:id')

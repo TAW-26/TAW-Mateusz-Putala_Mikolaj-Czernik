@@ -11,9 +11,7 @@ exports.updateProfile = async (req, res) => {
         const fieldsToUpdate = {
             username: req.body.username,
             email: req.body.email,
-            // Jeśli zdecydowałeś się dodać imię/nazwisko w modelu, odkomentuj poniższe:
-            // firstName: req.body.firstName,
-            // lastName: req.body.lastName
+            preferences: req.body.preferences
         };
 
         // Usuwamy z obiektu pola, które są undefined (użytkownik ich nie wysłał)

@@ -35,6 +35,26 @@ const tripSchema = new mongoose.Schema({
         type: String,
         enum: ['planowana', 'w trakcie', 'zakończona'],
         default: 'planowana'
+    },
+    aiSettings: {
+        intensity: {
+            type: Number,
+            min: 1,
+            max: 5,
+            default: 3 // 1: Powolne, 5: Bardzo intensywne
+        },
+        extraTimeTolerance: {
+            type: Number,
+            min: 0,
+            max: 100,
+            default: 20 // Ile % drogi/czasu użytkownik może nadłożyć
+        },
+        numberOfPoints: {
+            type: Number,
+            min: 1,
+            max: 10,
+            default: 5 // Ile punktów AI ma zaproponować
+        }
     }
 }, {
     timestamps: true,
