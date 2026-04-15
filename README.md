@@ -2,10 +2,11 @@
 
 Smart Voyager to ekosystem aplikacji (Web + Mobile) rewolucjonizujący planowanie podróży.
 Dzięki integracji z modelami LLM (OpenAI/Gemini), system generuje spersonalizowane trasy
-na podstawie budżetu i zainteresowań, a w trakcie podróży pełni rolę asystenta głosowego.
+na podstawie budżetu i zainteresowań, ale również konkretnych parametrów logistycznych i budżetowych wycieczki.
 
 ## 🚀 Stan projektu
 Zakończono implementację rdzenia Backendowego, w tym:
+* **Inteligentne Planowanie (AI): Pełna integracja z Groq API (Llama 3.3). System wykonuje wielowymiarową analizę preferencji użytkownika oraz ustawień wycieczki.
 * **Integracja z bazą danych:** Pełna komunikacja z MongoDB Atlas.
 * **Autoryzacja i Role (RBAC):** Zaawansowany system ról (User, Admin). Logowanie i rejestracja oparte na JWT oraz szyfrowaniu haseł (bcrypt).
 * **Pełny cykl edycji (CRUD):** Możliwość pełnego zarządzania profilami, wycieczkami oraz przystankami (Tworzenie, Odczyt, Aktualizacja, Usuwanie).
@@ -23,6 +24,13 @@ Zakończono implementację rdzenia Backendowego, w tym:
 * **AI Integration:** OpenAI API / Gemini API (Planowane: generowanie waypointów na trasie)
 
 ## 📡 Backend API (Endpointy)
+
+### Inteligentne Planowanie AI
+| Metoda | Endpoint | Opis | Uprawnienia |
+| :--- | :--- | :--- | :--- |
+| POST | `/api/trips/:id/generate` | Generuje nową trasę (punkty) przy użyciu AI na podstawie preferencji usera | Użytkownik |
+| DELETE | `/api/trips/:id/waypoints` | Czyści wszystkie punkty z danej wycieczki | Użytkownik |
+
 ### Uwierzytelnianie i Profil (`/api/auth`)
 | Metoda | Endpoint | Opis | Uprawnienia |
 | :--- | :--- | :--- | :--- |
@@ -69,7 +77,7 @@ Zakończono implementację rdzenia Backendowego, w tym:
 ### Backend
 1. Przejdź do folderu: `cd backend`
 2. Zainstaluj zależności: `npm install`
-3. Skonfiguruj plik `.env` (`MONGO_URI`, `JWT_SECRET`)
+3. Skonfiguruj plik `.env` (`MONGO_URI`, `JWT_SECRET`, `GROQ_API_KEY`)
 4. Zainicjalizuj konto Administratora: `npm run seed:admin`
     * Domyślne dane: `admin@voyager.pl` / `Haslo123!`
 5. Uruchom serwer: `npm run dev`
