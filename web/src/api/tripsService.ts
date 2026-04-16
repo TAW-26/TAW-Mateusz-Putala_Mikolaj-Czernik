@@ -1,17 +1,19 @@
-// src/api/tripsService.ts
-import api from './axiosInstance'
-import type { Trip } from '../types/';
+import api from './axiosInstance';
+import type { Trip, Waypoint } from '../types';
 
 export const tripsService = {
-    // Pobieranie wszystkich wycieczek
-    getAllTrips: async (): Promise<Trip[]> => {
-        const response = await api.get('/trips');
-        return response.data;
-    },
+    getTrips: () => api.get<{ data: Trip[] }>('/trips').then(res => res.data),
 
-    // Tworzenie nowej wycieczki (np. przez AI)
-    createTrip: async (tripData: Trip): Promise<Trip> => {
-        const response = await api.post('/trips', tripData);
-        return response.data;
-    }
+    getTripDetails: (id: string) => api.get<{ data: Trip }>(`/trips/${id}`).then(res => res.data),
+
+    createTrip: (tripData: Partial<Trip>) => api.post('/trips', tripData),
+
+    // GENEROWANIE AI
+    generateAIWaypoints: (id: string) => api.post(`/trips/${id}/generate`),
+
+    // WAYPOINTS
+    getWaypoints: (tripId: string) => api.get(`/trips/${tripId}/waypoints`),
+
+    updateWaypoint: (id: string, data: Partial<Waypoint>) =>
+        api.put(`/trips/waypoints/${id}`, data)
 };

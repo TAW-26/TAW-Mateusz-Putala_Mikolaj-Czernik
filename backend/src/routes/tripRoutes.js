@@ -69,3 +69,5 @@ router.route('/waypoints/:id')
     .delete(protect, deleteWaypoint);
 
 module.exports = router;
+
+

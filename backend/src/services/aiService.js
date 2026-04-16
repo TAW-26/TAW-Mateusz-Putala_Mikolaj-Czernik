@@ -80,3 +80,5 @@ exports.generateWaypoints = async (trip, user) => {
         throw new Error("Problem z połączeniem z Groq: " + error.message);
     }
 };
+
+

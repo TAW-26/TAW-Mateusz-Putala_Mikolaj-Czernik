@@ -242,3 +242,5 @@ exports.generateAITrip = async (req, res) => {
         res.status(500).json({ success: false, error: "AI nie mogło wygenerować trasy. Spróbuj ponownie." });
     }
 };
+
+

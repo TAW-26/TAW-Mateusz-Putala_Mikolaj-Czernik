@@ -79,3 +79,5 @@ tripSchema.virtual('waypoints', {
 });
 
 module.exports = mongoose.model('Trip', tripSchema);
+
+
