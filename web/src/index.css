@@ -1,0 +1,10 @@
+@import "tailwindcss";
+
+/* To zapewni, że tło zawsze będzie ciemne, a tekst biały */
+html, body, #root {
+    background-color: #09090b;
+    color: white;
+    margin: 0;
+    padding: 0;
+    min-height: 100vh;
+}
