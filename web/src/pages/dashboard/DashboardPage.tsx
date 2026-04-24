@@ -1,58 +1,111 @@
 import React, { useEffect, useState } from 'react';
-import { tripsService } from '../../api/tripsService';
+import api from '../../api/axiosInstance';
+import { TripCard } from '../../components/trips/TripCard';
+import { Plus, Sparkles, LayoutGrid, Activity, Loader2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export const DashboardPage: React.FC = () => {
+    // Inicjalizujemy jako pusta tablica
     const [trips, setTrips] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        const fetchTrips = async () => {
-            try {
-                // Teraz tripsService.getTrips() nie będzie już na czerwono!
-                const response = await tripsService.getTrips();
+        api.get('/trips')
+            .then(res => {
+                /**
+                 * FIX: Twój backend zwraca dane w formacie { success: true, data: [...] }
+                 * Musimy sięgnąć do res.data.data, aby dostać się do tablicy.
+                 */
+                const responseContent = res.data;
 
-                // Wyciągamy tablicę z pola 'data' (zgodnie z Twoim backendem)
-                const actualTrips = response.data || [];
-
-                console.log("Moje wycieczki z bazy:", actualTrips);
-                setTrips(actualTrips);
-            } catch (error) {
-                console.error("Błąd pobierania:", error);
-            } finally {
-                setLoading(false);
-            }
-        };
-        fetchTrips();
+                if (responseContent && Array.isArray(responseContent.data)) {
+                    // Scenariusz 1: Dane są w kluczu 'data' (najbardziej prawdopodobne u Ciebie)
+                    setTrips(responseContent.data);
+                } else if (Array.isArray(responseContent)) {
+                    // Scenariusz 2: Backend zwraca bezpośrednio tablicę
+                    setTrips(responseContent);
+                } else if (responseContent && Array.isArray(responseContent.trips)) {
+                    // Scenariusz 3: Dane są w kluczu 'trips'
+                    setTrips(responseContent.trips);
+                } else {
+                    // Failsafe: Jeśli nic nie pasuje, ustawiamy pustą listę
+                    setTrips([]);
+                }
+            })
+            .catch(err => {
+                console.error("Błąd ładowania wycieczek:", err);
+                setTrips([]);
+            })
+            .finally(() => setLoading(false));
     }, []);
 
-    if (loading) return <p style={{ padding: '20px' }}>Ładowanie Twoich przygód...</p>;
-
     return (
-        <div style={{ padding: '20px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <h1>Twoje Wycieczki ✈️</h1>
-                <Link to="/add-trip">
-                    <button style={{ padding: '10px', cursor: 'pointer' }}>+ Dodaj nową</button>
+        <div className="max-w-[1200px] mx-auto py-12 px-6">
+            {/* Header sekcji */}
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
+                <div>
+                    <div className="flex items-center gap-2 text-zinc-400 mb-2">
+                        <Activity size={16} />
+                        <span className="text-[10px] font-black uppercase tracking-[0.2em]">Live Dashboard</span>
+                    </div>
+                    <h1 className="text-4xl font-bold tracking-tighter text-zinc-900">Your Journeys</h1>
+                </div>
+
+                <Link
+                    to="/dashboard/add-trip"
+                    className="flex items-center gap-2 px-6 py-3 bg-zinc-900 text-white rounded-full text-xs font-bold uppercase tracking-widest hover:bg-zinc-800 transition-all shadow-lg shadow-zinc-200"
+                >
+                    <Plus size={16} /> New Adventure
                 </Link>
             </div>
 
-            {trips.length === 0 ? (
-                <p>Brak wycieczek. Może czas coś zaplanować z AI?</p>
-            ) : (
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '20px', marginTop: '20px' }}>
-                    {trips.map((trip) => (
-                        <div key={trip._id} style={{ border: '1px solid #ddd', padding: '15px', borderRadius: '8px' }}>
-                            {/* Zmiana: używamy title zamiast destination */}
-                            <h3>{trip.title}</h3>
-                            <p>📍 <strong>Cel:</strong> {trip.destination?.address}</p>
-                            <p>💰 <strong>Budżet:</strong> {trip.budget} PLN</p>
-                            <p>📅 <strong>Status:</strong> {trip.status}</p>
-                            <button style={{ width: '100%', marginTop: '10px' }}>Szczegóły</button>
-                        </div>
-                    ))}
+            {/* Siatka główna */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+
+                {/* Karta AI Prompt */}
+                <div className="lg:col-span-2 p-8 bg-zinc-900 rounded-[2.5rem] text-white flex flex-col justify-between relative overflow-hidden group">
+                    <Sparkles className="absolute right-[-20px] top-[-20px] w-64 h-64 text-white/5 group-hover:text-white/10 transition-all duration-700" />
+
+                    <div className="relative z-10">
+                        <h2 className="text-2xl font-bold tracking-tight mb-2">Ready for a new discovery?</h2>
+                        <p className="text-zinc-400 text-sm max-w-md leading-relaxed">
+                            Use our Llama 3.3 engine to generate a complete itinerary based on your latest profile preferences.
+                        </p>
+                    </div>
+
+                    <div className="relative z-10 mt-8">
+                        <Link to="/dashboard/add-trip" className="inline-block px-6 py-3 bg-white text-zinc-900 rounded-full text-[10px] font-black uppercase tracking-widest hover:scale-105 transition-transform">
+                            Generate with AI
+                        </Link>
+                    </div>
                 </div>
-            )}
+
+                {/* Karta Statystyk */}
+                <div className="p-8 bg-zinc-50 border border-zinc-100 rounded-[2.5rem] flex flex-col justify-between">
+                    <LayoutGrid className="text-zinc-300" />
+                    <div>
+                        <p className="text-4xl font-bold tracking-tighter text-zinc-900">
+                            {loading ? <Loader2 className="animate-spin inline" size={24} /> : trips.length}
+                        </p>
+                        <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Total Expeditions</p>
+                    </div>
+                </div>
+
+                {/* Lista wycieczek */}
+                {loading ? (
+                    <div className="lg:col-span-3 py-20 text-center">
+                        <Loader2 className="animate-spin mx-auto text-zinc-300" size={48} />
+                    </div>
+                ) : trips.length > 0 ? (
+                    trips.map((trip: any) => (
+                        <TripCard key={trip._id || trip.id} trip={trip} />
+                    ))
+                ) : (
+                    <div className="lg:col-span-3 py-20 text-center border-2 border-dashed border-zinc-100 rounded-[2.5rem]">
+                        <p className="text-zinc-400 text-sm font-medium italic">No journeys found. Start by creating one!</p>
+                    </div>
+                )}
+            </div>
         </div>
     );
 };

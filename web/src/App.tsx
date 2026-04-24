@@ -12,19 +12,21 @@ function App() {
     return (
         <Router>
             <Routes>
-                {/* TRASY PUBLICZNE */}
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/register" element={<RegisterPage />} />
 
-                {/* TRASY CHRONIONE (OWINIĘTE W LAYOUT) */}
-                <Route element={isAuthenticated ? <MainLayout /> : <Navigate to="/login" />}>
-                    <Route path="/dashboard" element={<DashboardPage />} />
-                    <Route path="/add-trip" element={<AddTripPage />} />
-                    <Route path="/profile" element={<ProfilePage />} />
-                    {/* Dodaj tutaj trasę dla szczegółów wycieczki, gdy będzie gotowa */}
+                {/* Zmieniamy ścieżkę bazową na /dashboard */}
+                <Route path="/dashboard" element={isAuthenticated ? <MainLayout /> : <Navigate to="/login" />}>
+                    {/* path="" oznacza główną stronę dashboardu (localhost:5173/dashboard) */}
+                    <Route index element={<DashboardPage />} />
+
+                    {/* path="add-trip" sprawia, że adres to: localhost:5173/dashboard/add-trip */}
+                    <Route path="add-trip" element={<AddTripPage />} />
+
+                    {/* path="profile" sprawia, że adres to: localhost:5173/dashboard/profile */}
+                    <Route path="profile" element={<ProfilePage />} />
                 </Route>
 
-                {/* PRZEKIEROWANIE STARTOWE */}
                 <Route path="/" element={<Navigate to={isAuthenticated ? "/dashboard" : "/login"} />} />
             </Routes>
         </Router>

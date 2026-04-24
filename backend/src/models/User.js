@@ -34,7 +34,9 @@ const UserSchema = new mongoose.Schema({
                 'parki_narodowe', 'góry', 'jeziora_i_rzeki',
                 'punkty_widokowe', 'fotografia',
                 'kuchnia_lokalna', 'street_food', 'kawiarnie',
-                'winiarnie_browary', 'opcje_wege'
+                'winiarnie_browary', 'opcje_wege',
+                // --- DODAJ TE, KTÓRE DOPISALIŚMY NA FRONCIE ---
+                'natura_parki', 'gory_hiking', 'zycie_nocne', 'zakupy', 'relaks_spa', 'lokalne_targi', 'technologia'
             ],
             default: []
         },
