@@ -15,5 +15,11 @@ export const tripsService = {
     getWaypoints: (tripId: string) => api.get(`/trips/${tripId}/waypoints`),
 
     updateWaypoint: (id: string, data: Partial<Waypoint>) =>
-        api.put(`/trips/waypoints/${id}`, data)
+        api.put(`/trips/waypoints/${id}`, data),
+
+    updateTrip: (id: string, data: Partial<Trip>) =>
+        api.put(`/trips/${id}`, data),
+
+    deleteTrip: (id: string) =>
+        api.delete(`/trips/${id}`)
 };

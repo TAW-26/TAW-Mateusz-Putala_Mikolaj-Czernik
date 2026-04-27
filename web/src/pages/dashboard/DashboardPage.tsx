@@ -1,34 +1,25 @@
 import React, { useEffect, useState } from 'react';
 import api from '../../api/axiosInstance';
+import { tripsService } from '../../api/tripsService'; // Importujemy serwis
 import { TripCard } from '../../components/trips/TripCard';
-import { Plus, Sparkles, LayoutGrid, Activity, Loader2 } from 'lucide-react';
+import { Plus, Sparkles, LayoutGrid, Activity, Loader2, Trash2 } from 'lucide-react'; // Dodano Trash2
 import { Link } from 'react-router-dom';
 
 export const DashboardPage: React.FC = () => {
-    // Inicjalizujemy jako pusta tablica
     const [trips, setTrips] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         api.get('/trips')
             .then(res => {
-                /**
-                 * FIX: Twój backend zwraca dane w formacie { success: true, data: [...] }
-                 * Musimy sięgnąć do res.data.data, aby dostać się do tablicy.
-                 */
                 const responseContent = res.data;
-
                 if (responseContent && Array.isArray(responseContent.data)) {
-                    // Scenariusz 1: Dane są w kluczu 'data' (najbardziej prawdopodobne u Ciebie)
                     setTrips(responseContent.data);
                 } else if (Array.isArray(responseContent)) {
-                    // Scenariusz 2: Backend zwraca bezpośrednio tablicę
                     setTrips(responseContent);
                 } else if (responseContent && Array.isArray(responseContent.trips)) {
-                    // Scenariusz 3: Dane są w kluczu 'trips'
                     setTrips(responseContent.trips);
                 } else {
-                    // Failsafe: Jeśli nic nie pasuje, ustawiamy pustą listę
                     setTrips([]);
                 }
             })
@@ -38,6 +29,20 @@ export const DashboardPage: React.FC = () => {
             })
             .finally(() => setLoading(false));
     }, []);
+
+    // --- FUNKCJA USUWANIA ---
+    const handleDeleteTrip = async (id: string) => {
+        if (!window.confirm("Are you sure you want to delete this journey?")) return;
+
+        try {
+            await tripsService.deleteTrip(id);
+            // Usuwamy wycieczkę ze stanu UI
+            setTrips(prev => prev.filter(t => (t._id || t.id) !== id));
+        } catch (err) {
+            console.error("Delete failed:", err);
+            alert("Could not delete the expedition.");
+        }
+    };
 
     return (
         <div className="max-w-[1200px] mx-auto py-12 px-6">
@@ -65,14 +70,12 @@ export const DashboardPage: React.FC = () => {
                 {/* Karta AI Prompt */}
                 <div className="lg:col-span-2 p-8 bg-zinc-900 rounded-[2.5rem] text-white flex flex-col justify-between relative overflow-hidden group">
                     <Sparkles className="absolute right-[-20px] top-[-20px] w-64 h-64 text-white/5 group-hover:text-white/10 transition-all duration-700" />
-
                     <div className="relative z-10">
                         <h2 className="text-2xl font-bold tracking-tight mb-2">Ready for a new discovery?</h2>
                         <p className="text-zinc-400 text-sm max-w-md leading-relaxed">
                             Use our Llama 3.3 engine to generate a complete itinerary based on your latest profile preferences.
                         </p>
                     </div>
-
                     <div className="relative z-10 mt-8">
                         <Link to="/dashboard/add-trip" className="inline-block px-6 py-3 bg-white text-zinc-900 rounded-full text-[10px] font-black uppercase tracking-widest hover:scale-105 transition-transform">
                             Generate with AI
@@ -91,14 +94,25 @@ export const DashboardPage: React.FC = () => {
                     </div>
                 </div>
 
-                {/* Lista wycieczek */}
+                {/* Lista wycieczek z przyciskiem usuwania */}
                 {loading ? (
                     <div className="lg:col-span-3 py-20 text-center">
                         <Loader2 className="animate-spin mx-auto text-zinc-300" size={48} />
                     </div>
                 ) : trips.length > 0 ? (
                     trips.map((trip: any) => (
-                        <TripCard key={trip._id || trip.id} trip={trip} />
+                        <div key={trip._id || trip.id} className="relative group">
+                            {/* Przycisk usuwania (pojawia się na hover) */}
+                            <button
+                                onClick={() => handleDeleteTrip(trip._id || trip.id)}
+                                className="absolute top-4 right-4 z-20 p-2 bg-white/80 backdrop-blur-sm text-red-500 rounded-full opacity-0 group-hover:opacity-100 transition-all hover:bg-red-500 hover:text-white shadow-sm border border-zinc-100"
+                                title="Delete Trip"
+                            >
+                                <Trash2 size={16} />
+                            </button>
+
+                            <TripCard trip={trip} />
+                        </div>
                     ))
                 ) : (
                     <div className="lg:col-span-3 py-20 text-center border-2 border-dashed border-zinc-100 rounded-[2.5rem]">
