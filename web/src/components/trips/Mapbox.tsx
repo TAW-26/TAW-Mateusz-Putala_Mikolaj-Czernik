@@ -1,9 +1,9 @@
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
-import { useEffect } from 'react';
+import { useImperativeHandle, forwardRef } from 'react';
 
-// Naprawa ikon przez CDN - najbardziej niezawodna metoda
+// Naprawa ikon przez CDN
 const DefaultIcon = L.icon({
     iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
     shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
@@ -13,15 +13,18 @@ const DefaultIcon = L.icon({
 
 L.Marker.prototype.options.icon = DefaultIcon;
 
-function MapEffect({ coords }: { coords: [number, number] }) {
+// Komponent pomocniczy do obsługi lotu do punktu
+function MapController({ internalRef }: { internalRef: any }) {
     const map = useMap();
-    useEffect(() => {
-        if (coords && coords[0] !== 0) {
-            map.setView(coords, 10);
-            // Wymuszenie przeliczenia rozmiaru, aby mapa nie była "szara"
-            setTimeout(() => map.invalidateSize(), 300);
+
+    useImperativeHandle(internalRef, () => ({
+        flyTo: (coords: [number, number]) => {
+            map.flyTo(coords, 14, {
+                duration: 1.5
+            });
         }
-    }, [coords, map]);
+    }));
+
     return null;
 }
 
@@ -30,16 +33,14 @@ interface MapboxProps {
     center: [number, number];
 }
 
-export const Mapbox = ({ waypoints, center }: MapboxProps) => {
+export const Mapbox = forwardRef((props: MapboxProps, ref) => {
+    const { waypoints, center } = props;
+
     return (
-        /* KLUCZ: z-index: 0 sprawia, że mapa nie "wchodzi" na sidebar.
-           Wcześniej Leaflet mógł mieć domyślnie z-index: 400+, co blokowało menu.
-        */
         <div style={{ height: '100%', width: '100%', position: 'relative', zIndex: 0 }}>
             <MapContainer
                 center={center}
                 zoom={10}
-                // Styl inline gwarantuje wysokość, a zIndex: 0 bezpieczeństwo nawigacji
                 style={{ height: '100%', width: '100%', zIndex: 0 }}
             >
                 <TileLayer
@@ -47,8 +48,9 @@ export const Mapbox = ({ waypoints, center }: MapboxProps) => {
                     url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                 />
 
+                <MapController internalRef={ref} />
+
                 {waypoints.map((wp, idx) => {
-                    // Sprawdzamy czy lokalizacja jest w formacie wp.location.lat (z bazy)
                     const lat = wp.location?.lat || wp.lat;
                     const lng = wp.location?.lng || wp.lng;
 
@@ -65,9 +67,7 @@ export const Mapbox = ({ waypoints, center }: MapboxProps) => {
                     }
                     return null;
                 })}
-
-                <MapEffect coords={center} />
             </MapContainer>
         </div>
     );
-};
+});
