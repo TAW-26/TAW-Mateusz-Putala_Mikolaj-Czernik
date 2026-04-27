@@ -7,7 +7,7 @@ export const MainLayout: React.FC = () => {
     const userRaw = localStorage.getItem('user');
     const userData = userRaw ? JSON.parse(userRaw) : null;
 
-    // Pobieramy rolę użytkownika - sprawdzamy różne możliwe struktury obiektu user
+    // Pobieramy rolę użytkownika
     const userRole = userData?.role || userData?.user?.role || 'user';
     const isAdmin = userRole === 'admin';
 
@@ -26,7 +26,6 @@ export const MainLayout: React.FC = () => {
     const handleLogout = () => {
         localStorage.removeItem('token');
         localStorage.removeItem('user');
-        // Jeśli zapisujesz userRole oddzielnie, też go usuń
         localStorage.removeItem('userRole');
         navigate('/login');
     };
@@ -52,10 +51,17 @@ export const MainLayout: React.FC = () => {
 
                     {/* WARUNKOWE RENDEROWANIE DLA ADMINA */}
                     {isAdmin && (
-                        <div className="pt-4 mt-4 border-t border-indigo-800 animate-in fade-in duration-500">
-                            <p className="px-3 text-xs uppercase text-indigo-400 font-semibold mb-2 tracking-widest">Command Center</p>
-                            <Link to="/admin" className="flex items-center p-3 hover:bg-indigo-800 rounded-lg transition text-amber-400">
-                                <span className="mr-3">🛡️</span> Panel Administratora
+                        <div className="pt-4 mt-4 border-t border-indigo-800 animate-in fade-in duration-500 space-y-1">
+                            <p className="px-3 text-[10px] uppercase text-indigo-400 font-black mb-2 tracking-[0.2em]">Command Center</p>
+
+                            {/* Link do statystyk (stary Panel Administratora) */}
+                            <Link to="/admin" className="flex items-center p-3 hover:bg-indigo-800 rounded-lg transition text-white">
+                                <span className="mr-3 text-sm">🛡️</span> Statystyki Systemu
+                            </Link>
+
+                            {/* NOWY LINK: Zarządzanie użytkownikami */}
+                            <Link to="/admin/users" className="flex items-center p-3 hover:bg-indigo-800 rounded-lg transition text-amber-400 font-medium">
+                                <span className="mr-3 text-sm">👥</span> Rejestr Agentów
                             </Link>
                         </div>
                     )}
