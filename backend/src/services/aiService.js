@@ -3,47 +3,68 @@ const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
 exports.generateWaypoints = async (trip, user) => {
     try {
-        console.log(`[Groq AI] Generowanie precyzyjnej trasy dla: ${trip.destination.address}`);
+        console.log(`[Groq AI] Generowanie trasy: ${trip.origin.address} -> ${trip.destination.address}`);
 
         const interests = user.preferences?.interests?.join(', ') || 'ogólne zwiedzanie';
-        const { intensity, numberOfPoints } = trip.aiSettings;
+
+        // DODANO: Destrukturyzacja z wartościami domyślnymi, aby uniknąć błędów przy braku pól
+        const {
+            intensity = 5,
+            numberOfPoints = 10,
+            discoverySpread = 5
+        } = trip.aiSettings || {};
+
         const budget = trip.budget > 0 ? `${trip.budget} PLN` : 'budżet ekonomiczny';
-        const days = trip.duration || 1;
 
-        const intensityDesc = [
-            "bardzo niska (1-2 miejsca dziennie)",
-            "niska (spokojne zwiedzanie)",
-            "umiarkowana (standardowe tempo)",
-            "wysoka (dużo obiektów)",
-            "bardzo wysoka (maksymalna intensywność)"
-        ][intensity - 1];
+        // DODANO: Definicja zmiennej specialRequests, której brakowało!
+        const specialRequests = trip.description
+            ? `DODATKOWE WYTYCZNE UŻYTKOWNIKA (PRIORYTET): ${trip.description}`
+            : "Brak dodatkowych życzeń.";
 
-        const prompt = `Jesteś profesjonalnym przewodnikiem turystycznym. 
-        Zaplanuj trasę z: ${trip.origin.address} do: ${trip.destination.address}. Skup się na miejscach znajdujących się na trasie samochodu między tymi lokalizacjami.
+        // 1. Interpretacja Rozproszenia (Discovery Spread 0-10)
+        let spreadInstruction = "";
+        if (discoverySpread <= 2) {
+            spreadInstruction = "ŚCISŁA TRASA: Szukaj miejsc wyłącznie przy głównej drodze lub w zasięgu 5-10 minut od zjazdu.";
+        } else if (discoverySpread <= 7) {
+            spreadInstruction = "UMIARKOWANE ROZPROSZENIE: Możesz zbaczać z głównej drogi do 30-40 km w poszukiwaniu unikalnych miejsc.";
+        } else {
+            spreadInstruction = "GŁĘBOKA EKSPLORACJA: Nie ograniczaj się odległością od trasy. Szukaj najlepszych perełek w całym regionie między punktem A i B.";
+        }
+
+        // 2. Interpretacja Intensywności (Intensity 0-10)
+        let intensityInstruction = "";
+        if (intensity <= 3) {
+            intensityInstruction = "Tempo bardzo spokojne, 1-2 główne atrakcje z czasem na relaks.";
+        } else if (intensity <= 7) {
+            intensityInstruction = "Tempo standardowe, zbalansowane zwiedzanie.";
+        } else {
+            intensityInstruction = "Tempo ekstremalne, krótkie, intensywne postoje i duża dynamika.";
+        }
+
+        const prompt = `Jesteś profesjonalnym przewodnikiem Voyager AI. 
+        Zaplanuj trasę z: ${trip.origin.address} do: ${trip.destination.address}.
         
-        PARAMETRY:
-        - Zainteresowania: ${interests}.
-        - Czas: ${days} dni.
-        - Budżet: ${budget}.
-        - Intensywność: ${intensity}/5 (${intensityDesc}).
-        - Ilość punktów: DOKŁADNIE ${numberOfPoints}.
+        PARAMETRY LOGICZNE:
+        - GEOGRAFIA: ${spreadInstruction}
+        - DYNAMIKA: ${intensityInstruction}
+        - LICZBA PUNKTÓW: DOKŁADNIE ${numberOfPoints}.
+        - ZAINTERESOWANIA: ${interests}.
+        - BUDŻET: ${budget}.
+        - KONIECZNE WYTYCZNE: ${specialRequests}
 
-        KRYTYCZNE WYMAGANIA:
+        WYMAGANIA TECHNICZNE:
         1. Każde miejsce MUSI istnieć w rzeczywistości.
-        2. Musisz podać DOKŁADNE współrzędne geograficzne (lat, lng) jako liczby (float).
-        3. Odpowiedź musi być TYLKO I WYŁĄCZNIE obiektem JSON zawierającym tablicę "waypoints".
+        2. Podaj DOKŁADNE współrzędne geograficzne (lat, lng) jako float.
+        3. Odpowiedź musi być WYŁĄCZNIE obiektem JSON.
 
-        STRUKTURA JSON (Musi być dokładnie taka):
+        STRUKTURA JSON:
         {
           "waypoints": [
             {
-              "name": "Pełna nazwa miejsca",
-              "address": "Dokładny adres, Miasto, Polska",
-              "description": "Opis pasujący do zainteresowań",
-              "location": {
-                "lat": 52.2297,
-                "lng": 21.0122
-              },
+              "name": "Pełna nazwa",
+              "address": "Adres, Miasto",
+              "description": "Dlaczego pasuje do profilu?",
+              "location": { "lat": 0.0, "lng": 0.0 },
               "order_index": 1
             }
           ]
@@ -53,7 +74,7 @@ exports.generateWaypoints = async (trip, user) => {
             messages: [
                 {
                     role: "system",
-                    content: "Jesteś precyzyjnym asystentem Voyager AI. Twoim zadaniem jest dostarczenie danych geograficznych w formacie JSON. Upewnij się, że 'lat' i 'lng' są poprawnymi współrzędnymi dla podanych adresów.",
+                    content: "Jesteś precyzyjnym asystentem Voyager AI. Twoim zadaniem jest dostarczenie danych geograficznych w formacie JSON.",
                 },
                 { role: "user", content: prompt },
             ],
@@ -63,7 +84,6 @@ exports.generateWaypoints = async (trip, user) => {
 
         const responseText = chatCompletion.choices[0]?.message?.content;
         const parsedData = JSON.parse(responseText);
-
         const waypoints = parsedData.waypoints || [];
 
         const validWaypoints = waypoints.map(wp => ({
@@ -79,6 +99,6 @@ exports.generateWaypoints = async (trip, user) => {
 
     } catch (error) {
         console.error("BŁĄD GROQ AI:", error);
-        throw new Error("Problem z połączeniem z silnikiem AI: " + error.message);
+        throw new Error("Błąd AI: " + error.message);
     }
 };

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import api from '../../api/axiosInstance';
 import { tripsService } from '../../api/tripsService'; // Importujemy serwis
 import { TripCard } from '../../components/trips/TripCard';
-import { Plus, Sparkles, LayoutGrid, Activity, Loader2, Trash2 } from 'lucide-react'; // Dodano Trash2
+import { Plus, LayoutGrid, Activity, Loader2, Trash2 } from 'lucide-react'; // Dodano Trash2
 import { Link } from 'react-router-dom';
 
 export const DashboardPage: React.FC = () => {
@@ -69,7 +69,6 @@ export const DashboardPage: React.FC = () => {
 
                 {/* Karta AI Prompt */}
                 <div className="lg:col-span-2 p-8 bg-zinc-900 rounded-[2.5rem] text-white flex flex-col justify-between relative overflow-hidden group">
-                    <Sparkles className="absolute right-[-20px] top-[-20px] w-64 h-64 text-white/5 group-hover:text-white/10 transition-all duration-700" />
                     <div className="relative z-10">
                         <h2 className="text-2xl font-bold tracking-tight mb-2">Ready for a new discovery?</h2>
                         <p className="text-zinc-400 text-sm max-w-md leading-relaxed">

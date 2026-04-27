@@ -11,13 +11,11 @@ const tripSchema = new mongoose.Schema({
         required: [true, 'Tytuł wycieczki jest wymagany'],
         trim: true
     },
-    // PUNKT A: Start
     origin: {
         address: { type: String, default: 'Obecna lokalizacja' },
         lat: { type: Number },
         lng: { type: Number }
     },
-    // PUNKT B: Cel
     destination: {
         address: { type: String, required: [true, 'Cel podróży jest wymagany'] },
         lat: { type: Number },
@@ -39,21 +37,31 @@ const tripSchema = new mongoose.Schema({
     aiSettings: {
         intensity: {
             type: Number,
-            min: 1,
-            max: 5,
-            default: 3
+            min: 0,
+            max: 10,
+            default: 5
         },
-        extraTimeTolerance: {
+        discoverySpread: { // Nowe pole zamiast maxDeviationKm
             type: Number,
             min: 0,
-            max: 100,
-            default: 20
+            max: 10,
+            default: 5
         },
         numberOfPoints: {
             type: Number,
             min: 1,
-            max: 20,
-            default: 5
+            max: 20, // Zgodnie z suwakiem na froncie
+            default: 10
+        },
+        // Zostawiam te pola na wypadek przyszłej rozbudowy,
+        // ale domyślnie frontend wysyła te powyżej
+        searchMode: {
+            type: String,
+            default: 'along-route'
+        },
+        tripStyle: {
+            type: String,
+            default: 'leisure'
         }
     }
 }, {
@@ -66,7 +74,7 @@ const tripSchema = new mongoose.Schema({
 tripSchema.virtual('duration').get(function() {
     if (this.startDate && this.endDate) {
         const diffInMs = Math.abs(this.endDate - this.startDate);
-        return Math.ceil(diffInMs / (1000 * 60 * 60 * 24));
+        return Math.ceil(diffInMs / (1000 * 60 * 60 * 24)) || 1; // Minimum 1 dzień
     }
     return 0;
 });
@@ -79,5 +87,3 @@ tripSchema.virtual('waypoints', {
 });
 
 module.exports = mongoose.model('Trip', tripSchema);
-
-
