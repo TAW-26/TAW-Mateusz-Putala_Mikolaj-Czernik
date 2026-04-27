@@ -1,9 +1,11 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { LoginPage } from './pages/auth/LoginPage';
-import { RegisterPage } from './pages/auth/RegisterPage'; // Import rejestracji z Twojej struktury
+import { RegisterPage } from './pages/auth/RegisterPage';
 import { DashboardPage } from './pages/dashboard/DashboardPage';
-import { AddTripPage } from './pages/dashboard/AddTripPage'; // Poprawiona ścieżka do folderu dashboard
-import { ProfilePage } from './pages/ProfilePage'; // Zakładając, że tu go umieścisz
+import { AddTripPage } from './pages/dashboard/AddTripPage';
+// POPRAWKA IMPORTÓW: Pliki są w folderze dashboard
+import { TripDetailsPage } from './pages/TripDetailsPage';
+import { ProfilePage } from './pages/ProfilePage';
 import { MainLayout } from './layouts/MainLayout';
 
 function App() {
@@ -15,19 +17,21 @@ function App() {
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/register" element={<RegisterPage />} />
 
-                {/* Zmieniamy ścieżkę bazową na /dashboard */}
-                <Route path="/dashboard" element={isAuthenticated ? <MainLayout /> : <Navigate to="/login" />}>
-                    {/* path="" oznacza główną stronę dashboardu (localhost:5173/dashboard) */}
-                    <Route index element={<DashboardPage />} />
+                {/* GŁÓWNA ZMIANA: Używamy "/" jako bazy dla Layoutu, aby obsłużyć obie ścieżki */}
+                <Route path="/" element={isAuthenticated ? <MainLayout /> : <Navigate to="/login" />}>
+                    <Route index element={<Navigate to="/dashboard" />} />
 
-                    {/* path="add-trip" sprawia, że adres to: localhost:5173/dashboard/add-trip */}
-                    <Route path="add-trip" element={<AddTripPage />} />
+                    {/* Ścieżki zaczynające się od /dashboard */}
+                    <Route path="dashboard" element={<DashboardPage />} />
+                    <Route path="dashboard/add-trip" element={<AddTripPage />} />
+                    <Route path="dashboard/profile" element={<ProfilePage />} />
 
-                    {/* path="profile" sprawia, że adres to: localhost:5173/dashboard/profile */}
-                    <Route path="profile" element={<ProfilePage />} />
+                    {/* Ścieżka, której szuka Twoja przeglądarka na zdjęciu */}
+                    <Route path="trips/:id" element={<TripDetailsPage />} />
                 </Route>
 
-                <Route path="/" element={<Navigate to={isAuthenticated ? "/dashboard" : "/login"} />} />
+                {/* Catch-all przekierowujący do dashboardu */}
+                <Route path="*" element={<Navigate to="/dashboard" />} />
             </Routes>
         </Router>
     );
