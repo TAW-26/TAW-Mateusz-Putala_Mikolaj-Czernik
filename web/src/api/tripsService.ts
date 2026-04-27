@@ -34,4 +34,7 @@ export const tripsService = {
     // USUWANIE PUNKTU (Zgodnie z Twoim routerem: /api/trips/waypoints/:id)
     deleteWaypoint: (id: string) =>
         api.delete(`/trips/waypoints/${id}`),
+
+    // PANEL ADMINA: Pobierz absolutnie wszystko
+    adminGetAllTrips: () => api.get<{ data: any[] }>('/trips/admin/all').then(res => res.data),
 };

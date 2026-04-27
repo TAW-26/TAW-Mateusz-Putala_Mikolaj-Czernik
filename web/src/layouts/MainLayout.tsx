@@ -7,6 +7,10 @@ export const MainLayout: React.FC = () => {
     const userRaw = localStorage.getItem('user');
     const userData = userRaw ? JSON.parse(userRaw) : null;
 
+    // Pobieramy rolę użytkownika - sprawdzamy różne możliwe struktury obiektu user
+    const userRole = userData?.role || userData?.user?.role || 'user';
+    const isAdmin = userRole === 'admin';
+
     const fullUsername = userData?.username || userData?.user?.username || 'Podróżniku';
     const firstName = fullUsername.split(' ')[0];
 
@@ -22,6 +26,8 @@ export const MainLayout: React.FC = () => {
     const handleLogout = () => {
         localStorage.removeItem('token');
         localStorage.removeItem('user');
+        // Jeśli zapisujesz userRole oddzielnie, też go usuń
+        localStorage.removeItem('userRole');
         navigate('/login');
     };
 
@@ -34,7 +40,6 @@ export const MainLayout: React.FC = () => {
                 </div>
 
                 <nav className="flex-1 p-4 space-y-2">
-                    {/* POPRAWIONE LINKI Z DOPISKIEM /dashboard */}
                     <Link to="/dashboard" className="flex items-center p-3 hover:bg-indigo-800 rounded-lg transition">
                         <span className="mr-3">📊</span> Dashboard
                     </Link>
@@ -45,12 +50,15 @@ export const MainLayout: React.FC = () => {
                         <span className="mr-3">👤</span> Profil i Preferencje
                     </Link>
 
-                    <div className="pt-4 mt-4 border-t border-indigo-800">
-                        <p className="px-3 text-xs uppercase text-indigo-400 font-semibold mb-2">Administracja</p>
-                        <Link to="/admin/stats" className="flex items-center p-3 hover:bg-indigo-800 rounded-lg transition">
-                            <span className="mr-3">🛡️</span> Statystyki Systemu
-                        </Link>
-                    </div>
+                    {/* WARUNKOWE RENDEROWANIE DLA ADMINA */}
+                    {isAdmin && (
+                        <div className="pt-4 mt-4 border-t border-indigo-800 animate-in fade-in duration-500">
+                            <p className="px-3 text-xs uppercase text-indigo-400 font-semibold mb-2 tracking-widest">Command Center</p>
+                            <Link to="/admin" className="flex items-center p-3 hover:bg-indigo-800 rounded-lg transition text-amber-400">
+                                <span className="mr-3">🛡️</span> Panel Administratora
+                            </Link>
+                        </div>
+                    )}
                 </nav>
 
                 <div className="p-4 border-t border-indigo-800">
@@ -65,8 +73,13 @@ export const MainLayout: React.FC = () => {
 
             {/* MAIN CONTENT */}
             <main className="flex-1 h-screen overflow-y-auto">
-                <header className="bg-white h-16 shadow-sm flex items-center justify-end px-8">
+                <header className="bg-white h-16 shadow-sm flex items-center justify-end px-8 sticky top-0 z-10">
                     <div className="flex items-center gap-3">
+                        {isAdmin && (
+                            <span className="px-2 py-0.5 bg-red-100 text-red-700 text-[10px] font-bold rounded uppercase border border-red-200">
+                                Admin Mode
+                            </span>
+                        )}
                         <span className="text-sm font-medium text-gray-600">Witaj, {firstName}!</span>
                         <div className="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-700 font-bold border border-indigo-200">
                             {initials}
