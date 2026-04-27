@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import api from '../../api/axiosInstance';
-import { tripsService } from '../../api/tripsService'; // Importujemy serwis
+import { tripsService } from '../../api/tripsService';
 import { TripCard } from '../../components/trips/TripCard';
-import { Plus, LayoutGrid, Activity, Loader2, Trash2 } from 'lucide-react'; // Dodano Trash2
+// Dodano ikonę Settings dla edycji
+import { Plus, LayoutGrid, Activity, Loader2, Trash2, Settings } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export const DashboardPage: React.FC = () => {
@@ -36,7 +37,6 @@ export const DashboardPage: React.FC = () => {
 
         try {
             await tripsService.deleteTrip(id);
-            // Usuwamy wycieczkę ze stanu UI
             setTrips(prev => prev.filter(t => (t._id || t.id) !== id));
         } catch (err) {
             console.error("Delete failed:", err);
@@ -93,7 +93,7 @@ export const DashboardPage: React.FC = () => {
                     </div>
                 </div>
 
-                {/* Lista wycieczek z przyciskiem usuwania */}
+                {/* Lista wycieczek */}
                 {loading ? (
                     <div className="lg:col-span-3 py-20 text-center">
                         <Loader2 className="animate-spin mx-auto text-zinc-300" size={48} />
@@ -101,14 +101,30 @@ export const DashboardPage: React.FC = () => {
                 ) : trips.length > 0 ? (
                     trips.map((trip: any) => (
                         <div key={trip._id || trip.id} className="relative group">
-                            {/* Przycisk usuwania (pojawia się na hover) */}
-                            <button
-                                onClick={() => handleDeleteTrip(trip._id || trip.id)}
-                                className="absolute top-4 right-4 z-20 p-2 bg-white/80 backdrop-blur-sm text-red-500 rounded-full opacity-0 group-hover:opacity-100 transition-all hover:bg-red-500 hover:text-white shadow-sm border border-zinc-100"
-                                title="Delete Trip"
-                            >
-                                <Trash2 size={16} />
-                            </button>
+
+                            {/* PANEL AKCJI (pojawia się na hover) */}
+                            <div className="absolute top-4 right-4 z-20 flex gap-2 opacity-0 group-hover:opacity-100 transition-all duration-300">
+                                {/* PRZYCISK EDYCJI */}
+                                <Link
+                                    to={`/dashboard/edit-trip/${trip._id || trip.id}`}
+                                    className="p-2 bg-white/90 backdrop-blur-sm text-zinc-600 rounded-full hover:bg-zinc-900 hover:text-white shadow-md border border-zinc-100 transition-colors"
+                                    title="Edit Trip Settings"
+                                >
+                                    <Settings size={16} />
+                                </Link>
+
+                                {/* PRZYCISK USUWANIA */}
+                                <button
+                                    onClick={(e) => {
+                                        e.preventDefault(); // Zapobiega nawigacji jeśli karta jest linkiem
+                                        handleDeleteTrip(trip._id || trip.id);
+                                    }}
+                                    className="p-2 bg-white/90 backdrop-blur-sm text-red-500 rounded-full hover:bg-red-500 hover:text-white shadow-md border border-zinc-100 transition-colors"
+                                    title="Delete Trip"
+                                >
+                                    <Trash2 size={16} />
+                                </button>
+                            </div>
 
                             <TripCard trip={trip} />
                         </div>

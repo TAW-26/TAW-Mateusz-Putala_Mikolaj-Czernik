@@ -1,8 +1,8 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
-import { tripsService } from '../api/tripsService';
-import type { Trip } from '../types';
-import { Mapbox } from '../components/trips/Mapbox';
+import { tripsService } from '../../api/tripsService.ts';
+import type { Trip } from '../../types';
+import { Mapbox } from '../../components/trips/Mapbox.tsx';
 import { MapPin, Sparkles, Loader2, Navigation, Clock, ShieldCheck } from 'lucide-react';
 
 export const TripDetailsPage = () => {
