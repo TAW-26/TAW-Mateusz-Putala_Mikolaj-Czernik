@@ -189,9 +189,15 @@ exports.deleteAllWaypoints = async (req, res) => {
     }
 };
 
+// --- FUNKCJE ADMINISTRACYJNE ---
+
 exports.getAllTripsAdmin = async (req, res) => {
     try {
-        const trips = await Trip.find().populate('user', 'username email');
+        // JEDYNA ZMIANA W PLIKU: dodanie .populate('waypoints')
+        const trips = await Trip.find()
+            .populate('user', 'username email')
+            .populate('waypoints');
+
         res.status(200).json({ success: true, count: trips.length, data: trips });
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -210,6 +216,8 @@ exports.getAllWaypointsAdmin = async (req, res) => {
         res.status(500).json({ success: false, error: err.message });
     }
 };
+
+// --- GENEROWANIE AI ---
 
 exports.generateAITrip = async (req, res) => {
     try {
@@ -242,5 +250,3 @@ exports.generateAITrip = async (req, res) => {
         res.status(500).json({ success: false, error: "AI nie mogło wygenerować trasy. Spróbuj ponownie." });
     }
 };
-
-
