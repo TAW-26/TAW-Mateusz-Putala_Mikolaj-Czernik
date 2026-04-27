@@ -52,7 +52,7 @@ const tripSchema = new mongoose.Schema({
         numberOfPoints: {
             type: Number,
             min: 1,
-            max: 10,
+            max: 20,
             default: 5
         }
     }

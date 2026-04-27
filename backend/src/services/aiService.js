@@ -18,9 +18,8 @@ exports.generateWaypoints = async (trip, user) => {
             "bardzo wysoka (maksymalna intensywność)"
         ][intensity - 1];
 
-        // POPRAWIONY PROMPT Z ZAGNIEŻDŻONĄ STRUKTURĄ LOCATION
         const prompt = `Jesteś profesjonalnym przewodnikiem turystycznym. 
-        Zaplanuj trasę z: ${trip.origin.address} do: ${trip.destination.address}. 
+        Zaplanuj trasę z: ${trip.origin.address} do: ${trip.destination.address}. Skup się na miejscach znajdujących się na trasie samochodu między tymi lokalizacjami.
         
         PARAMETRY:
         - Zainteresowania: ${interests}.
@@ -65,19 +64,17 @@ exports.generateWaypoints = async (trip, user) => {
         const responseText = chatCompletion.choices[0]?.message?.content;
         const parsedData = JSON.parse(responseText);
 
-        // Wyciągamy tablicę z obiektu (Llama przy response_format: json_object zawsze zwraca obiekt)
         const waypoints = parsedData.waypoints || [];
 
-        // DODATKOWA WERYFIKACJA DANYCH PRZED ZAPISEM
         const validWaypoints = waypoints.map(wp => ({
             ...wp,
             location: {
-                lat: parseFloat(wp.location?.lat || wp.lat), // Obsługa obu formatów na wszelki wypadek
+                lat: parseFloat(wp.location?.lat || wp.lat),
                 lng: parseFloat(wp.location?.lng || wp.lng)
             }
         })).filter(wp => !isNaN(wp.location.lat) && !isNaN(wp.location.lng));
 
-        console.log(`[Groq AI] Sukces: Wygenerowano ${validWaypoints.length} punktów z poprawnymi koordynatami.`);
+        console.log(`[Groq AI] Sukces: Wygenerowano ${validWaypoints.length} punktów.`);
         return validWaypoints;
 
     } catch (error) {
