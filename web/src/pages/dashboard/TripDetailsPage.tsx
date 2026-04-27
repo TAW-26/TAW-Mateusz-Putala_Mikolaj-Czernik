@@ -2,11 +2,10 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { tripsService } from '../../api/tripsService.ts';
 import { Mapbox } from '../../components/trips/Mapbox.tsx';
-import { MapPin, Sparkles, Loader2, Navigation, Clock, ShieldCheck } from 'lucide-react';
+import { MapPin, Sparkles, Loader2, Navigation, Clock, ShieldCheck, Trash2, CheckCircle2 } from 'lucide-react';
 
 export const TripDetailsPage = () => {
     const { id } = useParams<{ id: string }>();
-    // ZMIANA: używamy <any | null>, aby TS nie czepiał się brakujących pól w interfejsie
     const [trip, setTrip] = useState<any | null>(null);
     const [isGenerating, setIsGenerating] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -24,6 +23,54 @@ export const TripDetailsPage = () => {
         }
     }, [id]);
 
+    useEffect(() => { loadData(); }, [loadData]);
+
+    // --- FUNKCJE ZAPISUJĄCE DO BAZY (DLA WAYPOINTÓW) ---
+
+    const toggleVisited = async (e: React.MouseEvent, wp: any) => {
+        e.stopPropagation();
+        if (!wp._id) return;
+
+        try {
+            const newStatus = !wp.visited; // Zmieniono z isVisited na visited (zgodnie z modelem)
+
+            // Wywołujemy aktualizację pojedynczego punktu w bazie
+            await tripsService.updateWaypoint(wp._id, { visited: newStatus });
+
+            // Aktualizujemy stan lokalny
+            setTrip((prev: any) => ({
+                ...prev,
+                waypoints: prev.waypoints.map((w: any) =>
+                    w._id === wp._id ? { ...w, visited: newStatus } : w
+                )
+            }));
+        } catch (err) {
+            console.error("Sync error:", err);
+            alert("Critical failure: Could not update mission status.");
+        }
+    };
+
+    const deleteWaypoint = async (e: React.MouseEvent, wpId: string) => {
+        e.stopPropagation();
+        if (!window.confirm("Abort this objective? Point will be removed from navigation.")) return;
+
+        try {
+            // Wywołujemy usuwanie z bazy danych
+            await tripsService.deleteWaypoint(wpId);
+
+            // Usuwamy ze stanu lokalnego
+            setTrip((prev: any) => ({
+                ...prev,
+                waypoints: prev.waypoints.filter((w: any) => w._id !== wpId)
+            }));
+        } catch (err) {
+            console.error("Delete error:", err);
+            alert("Failed to remove point from database.");
+        }
+    };
+
+    // --- LOGIKA AI I MAPY ---
+
     const handleGenerateAI = async () => {
         if (!id) return;
         setIsGenerating(true);
@@ -38,13 +85,10 @@ export const TripDetailsPage = () => {
     const handleWaypointClick = (wp: any) => {
         const lat = wp.location?.lat ?? wp.lat;
         const lng = wp.location?.lng ?? wp.lng;
-
         if (typeof lat === 'number' && typeof lng === 'number' && mapRef.current) {
             mapRef.current.flyTo([lat, lng] as [number, number]);
         }
     };
-
-    useEffect(() => { loadData(); }, [loadData]);
 
     if (error) return <div className="p-20 text-red-500">{error}</div>;
     if (!trip) return (
@@ -92,23 +136,43 @@ export const TripDetailsPage = () => {
                             <div
                                 key={wp._id || index}
                                 onClick={() => handleWaypointClick(wp)}
-                                className="group bg-zinc-900/50 border border-zinc-800 p-6 rounded-[2rem] hover:border-purple-500/50 hover:bg-zinc-900 transition-all cursor-pointer active:scale-[0.98]"
+                                className={`group bg-zinc-900/50 border ${wp.visited ? 'border-emerald-500/30' : 'border-zinc-800'} p-6 rounded-[2rem] hover:border-purple-500/50 hover:bg-zinc-900 transition-all cursor-pointer relative overflow-hidden`}
                             >
-                                <div className="flex gap-4">
+                                {wp.visited && <div className="absolute inset-0 bg-emerald-500/5 pointer-events-none" />}
+
+                                <div className="flex gap-4 relative z-10">
                                     <div className="flex flex-col items-center">
-                                        <div className="w-8 h-8 rounded-full bg-zinc-800 flex items-center justify-center font-black text-[10px] border border-zinc-700 group-hover:bg-purple-600 group-hover:border-purple-400 transition-all text-zinc-400 group-hover:text-white">
-                                            {index + 1}
-                                        </div>
+                                        <button
+                                            onClick={(e) => toggleVisited(e, wp)}
+                                            className={`w-8 h-8 rounded-full flex items-center justify-center transition-all border ${
+                                                wp.visited
+                                                    ? 'bg-emerald-500 border-emerald-400 text-white'
+                                                    : 'bg-zinc-800 border-zinc-700 text-zinc-500 group-hover:border-purple-500'
+                                            }`}
+                                        >
+                                            {wp.visited ? <CheckCircle2 size={16} /> : <span className="font-black text-[10px]">{index + 1}</span>}
+                                        </button>
                                         {index !== trip.waypoints.length - 1 && (
                                             <div className="flex-1 w-[1px] bg-zinc-800 my-2"></div>
                                         )}
                                     </div>
+
                                     <div className="flex-1 pb-2">
-                                        <h4 className="text-lg font-bold mb-1 leading-tight text-zinc-100 group-hover:text-white transition-colors">{wp.name}</h4>
+                                        <div className="flex justify-between items-start">
+                                            <h4 className={`text-lg font-bold mb-1 leading-tight transition-all ${wp.visited ? 'text-zinc-500 line-through' : 'text-zinc-100'}`}>
+                                                {wp.name}
+                                            </h4>
+                                            <button
+                                                onClick={(e) => deleteWaypoint(e, wp._id)}
+                                                className="p-2 text-zinc-600 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"
+                                            >
+                                                <Trash2 size={16} />
+                                            </button>
+                                        </div>
                                         <p className="text-purple-400 text-[10px] font-bold mb-2 flex items-center gap-1 uppercase tracking-tighter">
                                             <MapPin size={10} /> {wp.address || "Location verified by AI"}
                                         </p>
-                                        <p className="text-zinc-500 text-xs leading-relaxed line-clamp-3 group-hover:text-zinc-400 transition-colors">{wp.description}</p>
+                                        <p className="text-zinc-500 text-xs leading-relaxed line-clamp-3">{wp.description}</p>
                                     </div>
                                 </div>
                             </div>
