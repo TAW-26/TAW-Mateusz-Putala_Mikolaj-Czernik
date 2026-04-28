@@ -10,7 +10,12 @@ import {
     CheckCircle2,
     Globe2,
     Map,
-    ShieldCheck
+    ShieldCheck,
+    Palmtree,
+    Utensils,
+    Compass,
+    Building2,
+    LibraryBig
 } from 'lucide-react';
 
 export const ProfilePage: React.FC = () => {
@@ -30,26 +35,74 @@ export const ProfilePage: React.FC = () => {
         personalNotes: ""
     };
 
-    // Rozbudowana lista zainteresowań dla lepszego profilowania AI
-    const interestOptions = [
-        { id: 'architektura_zabytkowa', label: 'History Architecture' },
-        { id: 'architektura_nowoczesna', label: 'Modernism' },
-        { id: 'muzea_sztuki', label: 'Art Gallery' },
-        { id: 'muzea_techniki', label: 'Tech Museums' },
-        { id: 'historia_wojenna', label: 'War History' },
-        { id: 'parki_narodowe', label: 'National Parks' },
-        { id: 'góry', label: 'Mountains' },
-        { id: 'jeziora_i_rzeki', label: 'Lakes & Rivers' },
-        { id: 'punkty_widokowe', label: 'Photo Spots' },
-        { id: 'fotografia', label: 'Photography' },
-        { id: 'kuchnia_lokalna', label: 'Gastronomy' },
-        { id: 'street_food', label: 'Street Food' },
-        { id: 'kawiarnie', label: 'Cafes' },
-        { id: 'winiarnie_browary', label: 'Wineries & Breweries' },
-        { id: 'opcje_wege', label: 'Vegan Options' }
+    const interestCategories = [
+        {
+            name: 'Architecture',
+            icon: <Building2 size={16} />,
+            options: [
+                { id: 'architektura_zabytkowa', label: 'Historic Architecture' },
+                { id: 'architektura_nowoczesna', label: 'Modernism & Glass' },
+                { id: 'brutalizm', label: 'Brutalism' },
+                { id: 'industrializm', label: 'Industrial Design' },
+                { id: 'sakralna', label: 'Sacred Spaces' },
+                { id: 'urbanistyka', label: 'Urban Planning' }
+            ]
+        },
+        {
+            name: 'History & Art',
+            icon: <LibraryBig size={16} />,
+            options: [
+                { id: 'muzea_sztuki', label: 'Art Galleries' },
+                { id: 'muzea_techniki', label: 'Tech & Engineering' },
+                { id: 'historia_wojenna', label: 'War History' },
+                { id: 'archeologia', label: 'Archaeological Sites' },
+                { id: 'sredniowiecze', label: 'Medieval Times' },
+                { id: 'renesans_barok', label: 'Renaissance & Baroque' },
+                { id: 'lokalny_folklor', label: 'Local Folklore' }
+            ]
+        },
+        {
+            name: 'Nature & Outdoors',
+            icon: <Palmtree size={16} />,
+            options: [
+                { id: 'parki_narodowe', label: 'National Parks' },
+                { id: 'góry', label: 'High Mountains' },
+                { id: 'jeziora_i_rzeki', label: 'Lakes & Rivers' },
+                { id: 'gory_hiking', label: 'Mountain Hiking' },
+                { id: 'natura_parki', label: 'City Parks & Nature' },
+                { id: 'wybrzeze_plaze', label: 'Coastline & Beaches' },
+                { id: 'jaskinie', label: 'Caves & Geology' }
+            ]
+        },
+        {
+            name: 'Food & Drink',
+            icon: <Utensils size={16} />,
+            options: [
+                { id: 'kuchnia_lokalna', label: 'Local Gastronomy' },
+                { id: 'street_food', label: 'Street Food' },
+                { id: 'kawiarnie', label: 'Café Culture' },
+                { id: 'winiarnie_browary', label: 'Wineries & Breweries' },
+                { id: 'opcje_wege', label: 'Vegan Options' },
+                { id: 'fine_dining', label: 'Fine Dining' },
+                { id: 'targi_rolnicze', label: 'Farmer Markets' }
+            ]
+        },
+        {
+            name: 'Lifestyle & Activity',
+            icon: <Compass size={16} />,
+            options: [
+                { id: 'punkty_widokowe', label: 'Photo Spots' },
+                { id: 'fotografia', label: 'Photography' },
+                { id: 'zycie_nocne', label: 'Nightlife' },
+                { id: 'zakupy', label: 'Shopping' },
+                { id: 'relaks_spa', label: 'Wellness & Spa' },
+                { id: 'technologia', label: 'Future & Tech' },
+                { id: 'sporty_ekstremalne', label: 'Extreme Sports' },
+                { id: 'lokalne_targi', label: 'Local Markets' }
+            ]
+        }
     ];
 
-    // Opcje logiczne zgodne z interfejsem User
     const travelStyleOptions = [
         { id: 'avoidPaidAttractions', label: 'Avoid Paid Attractions' },
         { id: 'onlyHiddenGems', label: 'Only Hidden Gems' },
@@ -130,8 +183,10 @@ export const ProfilePage: React.FC = () => {
     );
 
     return (
-        <div className="min-h-screen bg-[#09090b] text-zinc-100 selection:bg-indigo-500/30">
-            <div className="fixed inset-0 overflow-hidden pointer-events-none">
+        /* Dodano relative z-0, aby nawigacja była zawsze nad tym kontenerem */
+        <div className="min-h-screen bg-[#09090b] text-zinc-100 selection:bg-indigo-500/30 relative z-0">
+            {/* Background Blurs - dodano -z-10, aby nie przykrywały tekstu ani nie kolidowały z nawigacją */}
+            <div className="fixed inset-0 overflow-hidden pointer-events-none -z-10">
                 <div className="absolute -top-[25%] -left-[10%] w-[50%] h-[50%] bg-indigo-500/10 blur-[120px] rounded-full" />
                 <div className="absolute top-[40%] -right-[10%] w-[40%] h-[40%] bg-purple-500/10 blur-[120px] rounded-full" />
             </div>
@@ -169,7 +224,7 @@ export const ProfilePage: React.FC = () => {
                 <div className="grid lg:grid-cols-12 gap-12">
                     <div className="lg:col-span-8 space-y-12">
 
-                        {/* 1. AI INTEREST ENGINE */}
+                        {/* 1. AI INTEREST ENGINE (Z PODZIAŁEM NA KATEGORIE) */}
                         <section className="bg-zinc-900/40 border border-zinc-800/50 backdrop-blur-md rounded-[2rem] p-8 md:p-10">
                             <div className="flex items-center gap-3 mb-10">
                                 <div className="p-2 bg-indigo-500/10 rounded-lg">
@@ -178,22 +233,34 @@ export const ProfilePage: React.FC = () => {
                                 <h3 className="text-lg font-semibold">AI Preference Engine</h3>
                             </div>
 
-                            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                                {interestOptions.map((opt) => {
-                                    const active = user?.preferences?.interests?.includes(opt.id);
-                                    return (
-                                        <button
-                                            key={opt.id}
-                                            onClick={() => toggleInterest(opt.id)}
-                                            className={`flex items-center justify-between px-4 py-4 rounded-xl border transition-all duration-300 ${
-                                                active ? 'bg-indigo-600/20 border-indigo-500 text-white shadow-[0_0_15px_rgba(99,102,241,0.1)]' : 'bg-zinc-900/50 border-zinc-800 text-zinc-500 hover:border-zinc-700'
-                                            }`}
-                                        >
-                                            <span className="text-[10px] font-bold uppercase tracking-wider">{opt.label}</span>
-                                            {active && <CheckCircle2 size={14} className="text-indigo-400" />}
-                                        </button>
-                                    );
-                                })}
+                            <div className="space-y-10">
+                                {interestCategories.map((category) => (
+                                    <div key={category.name}>
+                                        <div className="flex items-center gap-2 mb-4 text-zinc-400">
+                                            {category.icon}
+                                            <span className="text-[10px] font-black uppercase tracking-[0.2em]">{category.name}</span>
+                                        </div>
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                                            {category.options.map((opt) => {
+                                                const active = user?.preferences?.interests?.includes(opt.id);
+                                                return (
+                                                    <button
+                                                        key={opt.id}
+                                                        onClick={() => toggleInterest(opt.id)}
+                                                        className={`flex items-center justify-between px-4 py-3 rounded-xl border transition-all duration-300 ${
+                                                            active
+                                                                ? 'bg-indigo-600/20 border-indigo-500 text-white shadow-[0_0_15px_rgba(99,102,241,0.1)]'
+                                                                : 'bg-zinc-900/50 border-zinc-800 text-zinc-500 hover:border-zinc-700'
+                                                        }`}
+                                                    >
+                                                        <span className="text-[10px] font-bold uppercase tracking-wider">{opt.label}</span>
+                                                        {active && <CheckCircle2 size={14} className="text-indigo-400" />}
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+                                ))}
                             </div>
                         </section>
 

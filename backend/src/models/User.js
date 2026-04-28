@@ -29,14 +29,25 @@ const UserSchema = new mongoose.Schema({
         interests: {
             type: [String],
             enum: [
-                'architektura_zabytkowa', 'architektura_nowoczesna',
-                'muzea_sztuki', 'muzea_techniki', 'historia_wojenna',
-                'parki_narodowe', 'góry', 'jeziora_i_rzeki',
-                'punkty_widokowe', 'fotografia',
-                'kuchnia_lokalna', 'street_food', 'kawiarnie',
-                'winiarnie_browary', 'opcje_wege',
-                // --- DODAJ TE, KTÓRE DOPISALIŚMY NA FRONCIE ---
-                'natura_parki', 'gory_hiking', 'zycie_nocne', 'zakupy', 'relaks_spa', 'lokalne_targi', 'technologia'
+                // Architecture
+                'architektura_zabytkowa', 'architektura_nowoczesna', 'brutalizm',
+                'industrializm', 'sakralna', 'urbanistyka',
+
+                // History & Art
+                'muzea_sztuki', 'muzea_techniki', 'historia_wojenna', 'archeologia',
+                'sredniowiecze', 'renesans_barok', 'lokalny_folklor',
+
+                // Nature & Outdoors
+                'parki_narodowe', 'góry', 'jeziora_i_rzeki', 'gory_hiking',
+                'natura_parki', 'wybrzeze_plaze', 'jaskinie',
+
+                // Food & Drink
+                'kuchnia_lokalna', 'street_food', 'kawiarnie', 'winiarnie_browary',
+                'opcje_wege', 'fine_dining', 'targi_rolnicze',
+
+                // Lifestyle & Activity
+                'punkty_widokowe', 'fotografia', 'zycie_nocne', 'zakupy',
+                'relaks_spa', 'technologia', 'sporty_ekstremalne', 'lokalne_targi'
             ],
             default: []
         },
