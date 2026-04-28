@@ -25,19 +25,12 @@ export const TripDetailsPage = () => {
 
     useEffect(() => { loadData(); }, [loadData]);
 
-    // --- FUNKCJE ZAPISUJĄCE DO BAZY (DLA WAYPOINTÓW) ---
-
     const toggleVisited = async (e: React.MouseEvent, wp: any) => {
         e.stopPropagation();
         if (!wp._id) return;
-
         try {
-            const newStatus = !wp.visited; // Zmieniono z isVisited na visited (zgodnie z modelem)
-
-            // Wywołujemy aktualizację pojedynczego punktu w bazie
+            const newStatus = !wp.visited;
             await tripsService.updateWaypoint(wp._id, { visited: newStatus });
-
-            // Aktualizujemy stan lokalny
             setTrip((prev: any) => ({
                 ...prev,
                 waypoints: prev.waypoints.map((w: any) =>
@@ -53,12 +46,8 @@ export const TripDetailsPage = () => {
     const deleteWaypoint = async (e: React.MouseEvent, wpId: string) => {
         e.stopPropagation();
         if (!window.confirm("Abort this objective? Point will be removed from navigation.")) return;
-
         try {
-            // Wywołujemy usuwanie z bazy danych
             await tripsService.deleteWaypoint(wpId);
-
-            // Usuwamy ze stanu lokalnego
             setTrip((prev: any) => ({
                 ...prev,
                 waypoints: prev.waypoints.filter((w: any) => w._id !== wpId)
@@ -69,8 +58,6 @@ export const TripDetailsPage = () => {
         }
     };
 
-    // --- LOGIKA AI I MAPY ---
-
     const handleGenerateAI = async () => {
         if (!id) return;
         setIsGenerating(true);
@@ -78,6 +65,7 @@ export const TripDetailsPage = () => {
             await tripsService.generateAIWaypoints(id);
             await loadData();
         } catch (err) {
+            // To ten błąd, który widzisz na screenie - sprawdź klucze w .env lub na backendzie
             alert("AI Engine failure. Check your Groq API Key.");
         } finally { setIsGenerating(false); }
     };
@@ -98,8 +86,9 @@ export const TripDetailsPage = () => {
     );
 
     return (
-        <div className="min-h-screen bg-zinc-950 text-zinc-100 p-8">
-            <header className="max-w-6xl mx-auto flex justify-between items-end mb-12 border-b border-zinc-800 pb-8">
+        /* z-0 tutaj sprawia, że MainLayout (pasek na górze) wygrywa walkę o warstwy */
+        <div className="min-h-screen bg-zinc-950 text-zinc-100 p-8 relative z-0">
+            <header className="max-w-6xl mx-auto flex justify-between items-end mb-12 border-b border-zinc-800 pb-8 relative">
                 <div>
                     <div className="flex items-center gap-2 text-purple-400 mb-2">
                         <ShieldCheck size={14} />
@@ -116,7 +105,7 @@ export const TripDetailsPage = () => {
                 <button
                     onClick={handleGenerateAI}
                     disabled={isGenerating}
-                    className="group relative px-8 py-4 bg-zinc-100 text-zinc-950 rounded-2xl font-bold overflow-hidden transition-all hover:scale-105 disabled:opacity-50 shadow-lg shadow-white/5"
+                    className="group relative px-8 py-4 bg-zinc-100 text-zinc-950 rounded-2xl font-bold overflow-hidden transition-all hover:scale-105 disabled:opacity-50 shadow-lg shadow-white/5 z-10"
                 >
                     <div className="flex items-center gap-2 relative z-10">
                         {isGenerating ? <Loader2 className="animate-spin" /> : <Sparkles size={20} />}
@@ -125,7 +114,7 @@ export const TripDetailsPage = () => {
                 </button>
             </header>
 
-            <main className="max-w-7xl mx-auto grid lg:grid-cols-5 gap-10">
+            <main className="max-w-7xl mx-auto grid lg:grid-cols-5 gap-10 relative">
                 <div className="lg:col-span-2 space-y-6">
                     <h2 className="text-[10px] font-black uppercase tracking-widest text-zinc-500 flex items-center gap-2">
                         <Clock size={14} /> Intelligence Directives (Waypoints)
@@ -136,7 +125,7 @@ export const TripDetailsPage = () => {
                             <div
                                 key={wp._id || index}
                                 onClick={() => handleWaypointClick(wp)}
-                                className={`group bg-zinc-900/50 border ${wp.visited ? 'border-emerald-500/30' : 'border-zinc-800'} p-6 rounded-[2rem] hover:border-purple-500/50 hover:bg-zinc-900 transition-all cursor-pointer relative overflow-hidden`}
+                                className="group bg-zinc-900/50 border border-zinc-800 p-6 rounded-[2rem] hover:border-purple-500/50 hover:bg-zinc-900 transition-all cursor-pointer relative overflow-hidden"
                             >
                                 {wp.visited && <div className="absolute inset-0 bg-emerald-500/5 pointer-events-none" />}
 
@@ -172,7 +161,10 @@ export const TripDetailsPage = () => {
                                         <p className="text-purple-400 text-[10px] font-bold mb-2 flex items-center gap-1 uppercase tracking-tighter">
                                             <MapPin size={10} /> {wp.address || "Location verified by AI"}
                                         </p>
-                                        <p className="text-zinc-500 text-xs leading-relaxed line-clamp-3">{wp.description}</p>
+                                        {/* Ustawienie line-clamp, które znika po najechaniu (hover) */}
+                                        <p className="text-zinc-500 text-xs leading-relaxed line-clamp-3 group-hover:line-clamp-none transition-all duration-300">
+                                            {wp.description}
+                                        </p>
                                     </div>
                                 </div>
                             </div>
