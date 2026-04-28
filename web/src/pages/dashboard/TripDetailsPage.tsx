@@ -32,12 +32,10 @@ export const TripDetailsPage = () => {
         if (!wp._id) return;
 
         try {
-            const newStatus = !wp.visited; // Zmieniono z isVisited na visited (zgodnie z modelem)
+            const newStatus = !wp.visited;
 
-            // Wywołujemy aktualizację pojedynczego punktu w bazie
             await tripsService.updateWaypoint(wp._id, { visited: newStatus });
 
-            // Aktualizujemy stan lokalny
             setTrip((prev: any) => ({
                 ...prev,
                 waypoints: prev.waypoints.map((w: any) =>
@@ -55,10 +53,8 @@ export const TripDetailsPage = () => {
         if (!window.confirm("Abort this objective? Point will be removed from navigation.")) return;
 
         try {
-            // Wywołujemy usuwanie z bazy danych
             await tripsService.deleteWaypoint(wpId);
 
-            // Usuwamy ze stanu lokalnego
             setTrip((prev: any) => ({
                 ...prev,
                 waypoints: prev.waypoints.filter((w: any) => w._id !== wpId)
@@ -172,7 +168,11 @@ export const TripDetailsPage = () => {
                                         <p className="text-purple-400 text-[10px] font-bold mb-2 flex items-center gap-1 uppercase tracking-tighter">
                                             <MapPin size={10} /> {wp.address || "Location verified by AI"}
                                         </p>
-                                        <p className="text-zinc-500 text-xs leading-relaxed line-clamp-3">{wp.description}</p>
+
+                                        {/* ZMIENIONY FRAGMENT: line-clamp-3 na line-clamp-none po hoverze */}
+                                        <p className="text-zinc-500 text-xs leading-relaxed transition-all duration-300 line-clamp-3 group-hover:line-clamp-none">
+                                            {wp.description}
+                                        </p>
                                     </div>
                                 </div>
                             </div>

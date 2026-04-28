@@ -42,7 +42,8 @@ exports.generateWaypoints = async (trip, user) => {
         }
 
         const prompt = `Jesteś profesjonalnym przewodnikiem Voyager AI. 
-        Zaplanuj trasę z: ${trip.origin.address} do: ${trip.destination.address}.
+        Zaplanuj trasę z: ${trip.origin.address} do: ${trip.destination.address}. Postaraj się zaplanować trasę między wspomnianymi lokalizacjami nie wychodzą dalej po za te lokalizacje. 
+        Staraj się szukać ciekawe miejsc głównie w okolicy połowy między wspomnianymi wyżej lokalizacjami. Zwróć uwagę jakie miejscowości czy kraje są między danymi lokalizacjami tak, aby wszędzie poszukać coś ciekawego.
         
         PARAMETRY LOGICZNE:
         - GEOGRAFIA: ${spreadInstruction}
@@ -63,7 +64,7 @@ exports.generateWaypoints = async (trip, user) => {
             {
               "name": "Pełna nazwa",
               "address": "Adres, Miasto",
-              "description": "Dlaczego pasuje do profilu?",
+              "description": "Dlaczego pasuje do profilu? Poszukaj w Internecie informacji na temat danego miejsca aby zweryfikować jego autentyczność i napisz o danym dłuższy opis konieczine około 10 zdań.",
               "location": { "lat": 0.0, "lng": 0.0 },
               "order_index": 1
             }
