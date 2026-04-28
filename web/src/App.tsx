@@ -8,8 +8,9 @@ import { TripDetailsPage } from './pages/dashboard/TripDetailsPage.tsx';
 import { ProfilePage } from './pages/ProfilePage';
 import { MainLayout } from './layouts/MainLayout';
 import { AdminDashboard } from './pages/admin/AdminDashboard';
-// DODANO IMPORT:
 import { UserManagementPage } from './pages/admin/UserManagementPage';
+// DODANO IMPORT:
+import { AdminWaypointsPage } from './pages/admin/AdminWaypointsPage';
 
 function App() {
     const isAuthenticated = !!localStorage.getItem('token');
@@ -41,10 +42,14 @@ function App() {
                         path="admin"
                         element={isAdmin ? <AdminDashboard /> : <Navigate to="/dashboard" />}
                     />
-                    {/* DODANO ŚCIEŻKĘ ZARZĄDZANIA UŻYTKOWNIKAMI: */}
                     <Route
                         path="admin/users"
                         element={isAdmin ? <UserManagementPage /> : <Navigate to="/dashboard" />}
+                    />
+                    {/* DODANO ŚCIEŻKĘ GLOBALNYCH WAYPOINTÓW: */}
+                    <Route
+                        path="admin/waypoints"
+                        element={isAdmin ? <AdminWaypointsPage /> : <Navigate to="/dashboard" />}
                     />
                 </Route>
 

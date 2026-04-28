@@ -35,6 +35,11 @@ export const tripsService = {
     deleteWaypoint: (id: string) =>
         api.delete(`/trips/waypoints/${id}`),
 
-    // PANEL ADMINA: Pobierz absolutnie wszystko
+    // --- PANEL ADMINA: Pobierz absolutnie wszystko ---
+
+    // Pobieranie wszystkich wycieczek
     adminGetAllTrips: () => api.get<{ data: any[] }>('/trips/admin/all').then(res => res.data),
+
+    // DODANO: Pobieranie wszystkich waypointów (to usunie Twój błąd w AdminWaypointsPage)
+    adminGetAllWaypoints: () => api.get<{ data: any[] }>('/trips/admin/waypoints').then(res => res.data),
 };

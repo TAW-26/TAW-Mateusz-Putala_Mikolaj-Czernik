@@ -30,8 +30,11 @@ const validate = (req, res, next) => {
 };
 
 // --- TRASY ADMINISTRACYJNE ---
+// Pobiera wszystkie wycieczki wszystkich użytkowników
 router.get('/admin/all', protect, authorize('admin'), getAllTripsAdmin);
-router.get('/admin/all/waypoints', protect, authorize('admin'), getAllWaypointsAdmin);
+
+// ZMIANA: Usunięto /all, aby pasowało do frontendu: /api/trips/admin/waypoints
+router.get('/admin/waypoints', protect, authorize('admin'), getAllWaypointsAdmin);
 
 // --- TRASY UŻYTKOWNIKA (WYCIECZKI) ---
 router.route('/')
@@ -69,5 +72,3 @@ router.route('/waypoints/:id')
     .delete(protect, deleteWaypoint);
 
 module.exports = router;
-
-

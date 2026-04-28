@@ -54,14 +54,19 @@ export const MainLayout: React.FC = () => {
                         <div className="pt-4 mt-4 border-t border-indigo-800 animate-in fade-in duration-500 space-y-1">
                             <p className="px-3 text-[10px] uppercase text-indigo-400 font-black mb-2 tracking-[0.2em]">Command Center</p>
 
-                            {/* Link do statystyk (stary Panel Administratora) */}
+                            {/* Link do statystyk */}
                             <Link to="/admin" className="flex items-center p-3 hover:bg-indigo-800 rounded-lg transition text-white">
                                 <span className="mr-3 text-sm">🛡️</span> Statystyki Systemu
                             </Link>
 
-                            {/* NOWY LINK: Zarządzanie użytkownikami */}
-                            <Link to="/admin/users" className="flex items-center p-3 hover:bg-indigo-800 rounded-lg transition text-amber-400 font-medium">
+                            {/* Zarządzanie użytkownikami */}
+                            <Link to="/admin/users" className="flex items-center p-3 hover:bg-indigo-800 rounded-lg transition text-white font-medium">
                                 <span className="mr-3 text-sm">👥</span> Rejestr Agentów
+                            </Link>
+
+                            {/* NOWY LINK: Globalny rejestr punktów */}
+                            <Link to="/admin/waypoints" className="flex items-center p-3 hover:bg-indigo-800 rounded-lg transition text-amber-400 font-medium">
+                                <span className="mr-3 text-sm">📍</span> Baza Waypointów
                             </Link>
                         </div>
                     )}
