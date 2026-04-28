@@ -32,7 +32,6 @@ L.Marker.prototype.options.icon = DefaultIcon;
 
 function MapController({ internalRef }: { internalRef: any }) {
     const map = useMap();
-
     useImperativeHandle(internalRef, () => ({
         flyTo: (coords: [number, number]) => {
             map.flyTo(coords, 14, {
@@ -40,7 +39,6 @@ function MapController({ internalRef }: { internalRef: any }) {
             });
         }
     }));
-
     return null;
 }
 
@@ -74,9 +72,8 @@ export const Mapbox = forwardRef((props: MapboxProps, ref) => {
                 {waypoints.map((wp, idx) => {
                     const lat = wp.location?.lat || wp.lat;
                     const lng = wp.location?.lng || wp.lng;
-
                     if (typeof lat === 'number' && typeof lng === 'number') {
-                        // ROZWIĄZANIE: Jawne określenie typu unii dla TypeScript
+// ROZWIĄZANIE: Jawne określenie typu unii dla TypeScript
                         let currentIcon: L.Icon | L.DivIcon = DefaultIcon;
                         let labelPrefix = "";
 
@@ -98,8 +95,8 @@ export const Mapbox = forwardRef((props: MapboxProps, ref) => {
                                     <div className="text-zinc-900 font-bold p-1">
                                         {labelPrefix && (
                                             <span className="text-[10px] text-zinc-500 block mb-1 uppercase tracking-tighter">
-                                                {labelPrefix}
-                                            </span>
+{labelPrefix}
+</span>
                                         )}
                                         {wp.name}
                                     </div>

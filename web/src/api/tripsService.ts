@@ -11,9 +11,14 @@ export const tripsService = {
     // TWORZENIE
     createTrip: (tripData: Partial<Trip>) => api.post('/trips', tripData),
 
-    // AKTUALIZACJA WYCIECZKI (Tytuł, budżet itp.)
+    // AKTUALIZACJA WYCIECZKI (Tytuł, budżet, isFavorite itp.)
     updateTrip: (id: string, data: Partial<Trip>) =>
         api.put(`/trips/${id}`, data),
+
+    // --- NOWA METODA: ULUBIONE ---
+    // Pozwala na szybkie przełączenie statusu ulubionych
+    toggleFavorite: (id: string, isFavorite: boolean) =>
+        api.put(`/trips/${id}`, { isFavorite }).then(res => res.data),
 
     // USUWANIE WYCIECZKI
     deleteTrip: (id: string) =>
@@ -27,19 +32,19 @@ export const tripsService = {
     // Pobieranie wszystkich punktów dla danej trasy
     getWaypoints: (tripId: string) => api.get(`/trips/${tripId}/waypoints`),
 
-    // AKTUALIZACJA PUNKTU (Zgodnie z Twoim routerem: /api/trips/waypoints/:id)
+    // AKTUALIZACJA PUNKTU
     updateWaypoint: (id: string, data: Partial<Waypoint>) =>
         api.put(`/trips/waypoints/${id}`, data),
 
-    // USUWANIE PUNKTU (Zgodnie z Twoim routerem: /api/trips/waypoints/:id)
+    // USUWANIE PUNKTU
     deleteWaypoint: (id: string) =>
         api.delete(`/trips/waypoints/${id}`),
 
-    // --- PANEL ADMINA: Pobierz absolutnie wszystko ---
+    // --- PANEL ADMINA ---
 
     // Pobieranie wszystkich wycieczek
     adminGetAllTrips: () => api.get<{ data: any[] }>('/trips/admin/all').then(res => res.data),
 
-    // DODANO: Pobieranie wszystkich waypointów (to usunie Twój błąd w AdminWaypointsPage)
+    // Pobieranie wszystkich waypointów
     adminGetAllWaypoints: () => api.get<{ data: any[] }>('/trips/admin/waypoints').then(res => res.data),
 };

@@ -57,6 +57,8 @@ exports.generateWaypoints = async (trip, user) => {
         1. Każde miejsce MUSI istnieć w rzeczywistości.
         2. Podaj DOKŁADNE współrzędne geograficzne (lat, lng) jako float.
         3. Odpowiedź musi być WYŁĄCZNIE obiektem JSON.
+        4. Pierwszym punktem trasy ma być ${trip.origin.address}.
+        5. Ostatnim punktem trasy ma być ${trip.destination.address}.
 
         STRUKTURA JSON:
         {

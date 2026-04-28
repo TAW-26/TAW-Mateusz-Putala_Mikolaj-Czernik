@@ -7,7 +7,6 @@ export const MainLayout: React.FC = () => {
     const userRaw = localStorage.getItem('user');
     const userData = userRaw ? JSON.parse(userRaw) : null;
 
-    // Pobieramy rolę użytkownika
     const userRole = userData?.role || userData?.user?.role || 'user';
     const isAdmin = userRole === 'admin';
 
@@ -45,6 +44,15 @@ export const MainLayout: React.FC = () => {
                     <Link to="/dashboard/add-trip" className="flex items-center p-3 hover:bg-indigo-800 rounded-lg transition">
                         <span className="mr-3">✨</span> Nowa Wycieczka
                     </Link>
+
+                    {/* DODANY LINK DO ULUBIONYCH */}
+                    <Link
+                        to="/dashboard?filter=favorites"
+                        className="flex items-center p-3 hover:bg-indigo-800 rounded-lg transition text-rose-300 font-medium"
+                    >
+                        <span className="mr-3">❤️</span> Ulubione
+                    </Link>
+
                     <Link to="/dashboard/profile" className="flex items-center p-3 hover:bg-indigo-800 rounded-lg transition">
                         <span className="mr-3">👤</span> Profil i Preferencje
                     </Link>
@@ -53,18 +61,12 @@ export const MainLayout: React.FC = () => {
                     {isAdmin && (
                         <div className="pt-4 mt-4 border-t border-indigo-800 animate-in fade-in duration-500 space-y-1">
                             <p className="px-3 text-[10px] uppercase text-indigo-400 font-black mb-2 tracking-[0.2em]">Command Center</p>
-
-                            {/* Link do statystyk */}
                             <Link to="/admin" className="flex items-center p-3 hover:bg-indigo-800 rounded-lg transition text-white">
                                 <span className="mr-3 text-sm">🛡️</span> Statystyki Systemu
                             </Link>
-
-                            {/* Zarządzanie użytkownikami */}
                             <Link to="/admin/users" className="flex items-center p-3 hover:bg-indigo-800 rounded-lg transition text-white font-medium">
                                 <span className="mr-3 text-sm">👥</span> Rejestr Agentów
                             </Link>
-
-                            {/* NOWY LINK: Globalny rejestr punktów */}
                             <Link to="/admin/waypoints" className="flex items-center p-3 hover:bg-indigo-800 rounded-lg transition text-amber-400 font-medium">
                                 <span className="mr-3 text-sm">📍</span> Baza Waypointów
                             </Link>

@@ -32,6 +32,7 @@ export interface Trip {
     destination: { address: string; lat?: number; lng?: number };
     startDate?: string;
     endDate?: string;
+    isFavorite?: boolean;
     budget: number;
     status: 'planowana' | 'w trakcie' | 'zakończona';
     aiSettings: {

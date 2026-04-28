@@ -11,6 +11,11 @@ const tripSchema = new mongoose.Schema({
         required: [true, 'Tytuł wycieczki jest wymagany'],
         trim: true
     },
+    // --- NOWE POLE: ULUBIONE ---
+    isFavorite: {
+        type: Boolean,
+        default: false
+    },
     origin: {
         address: { type: String, default: 'Obecna lokalizacja' },
         lat: { type: Number },
@@ -41,7 +46,7 @@ const tripSchema = new mongoose.Schema({
             max: 10,
             default: 5
         },
-        discoverySpread: { // Nowe pole zamiast maxDeviationKm
+        discoverySpread: {
             type: Number,
             min: 0,
             max: 10,
@@ -50,11 +55,9 @@ const tripSchema = new mongoose.Schema({
         numberOfPoints: {
             type: Number,
             min: 1,
-            max: 20, // Zgodnie z suwakiem na froncie
+            max: 20,
             default: 10
         },
-        // Zostawiam te pola na wypadek przyszłej rozbudowy,
-        // ale domyślnie frontend wysyła te powyżej
         searchMode: {
             type: String,
             default: 'along-route'
@@ -74,7 +77,7 @@ const tripSchema = new mongoose.Schema({
 tripSchema.virtual('duration').get(function() {
     if (this.startDate && this.endDate) {
         const diffInMs = Math.abs(this.endDate - this.startDate);
-        return Math.ceil(diffInMs / (1000 * 60 * 60 * 24)) || 1; // Minimum 1 dzień
+        return Math.ceil(diffInMs / (1000 * 60 * 60 * 24)) || 1;
     }
     return 0;
 });
