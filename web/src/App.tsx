@@ -9,53 +9,50 @@ import { ProfilePage } from './pages/ProfilePage';
 import { MainLayout } from './layouts/MainLayout';
 import { AdminDashboard } from './pages/admin/AdminDashboard';
 import { UserManagementPage } from './pages/admin/UserManagementPage';
-// DODANO IMPORT:
 import { AdminWaypointsPage } from './pages/admin/AdminWaypointsPage';
+import { ErrorBoundary } from './components/common/ErrorBoundary'; // IMPORT
 
 function App() {
     const isAuthenticated = !!localStorage.getItem('token');
-
-    // --- POBIERANIE ROLI ---
     const userRaw = localStorage.getItem('user');
     const userData = userRaw ? JSON.parse(userRaw) : null;
-
     const userRole = userData?.role || userData?.user?.role || 'user';
     const isAdmin = userRole === 'admin';
 
     return (
-        <Router>
-            <Routes>
-                <Route path="/login" element={<LoginPage />} />
-                <Route path="/register" element={<RegisterPage />} />
+        <ErrorBoundary>
+            <Router>
+                <Routes>
+                    <Route path="/login" element={<LoginPage />} />
+                    <Route path="/register" element={<RegisterPage />} />
 
-                <Route path="/" element={isAuthenticated ? <MainLayout /> : <Navigate to="/login" />}>
-                    <Route index element={<Navigate to="/dashboard" />} />
+                    <Route path="/" element={isAuthenticated ? <MainLayout /> : <Navigate to="/login" />}>
+                        <Route index element={<Navigate to="/dashboard" />} />
+                        <Route path="dashboard" element={<DashboardPage />} />
+                        <Route path="dashboard/add-trip" element={<AddTripPage />} />
+                        <Route path="dashboard/edit-trip/:id" element={<EditTripPage />} />
+                        <Route path="dashboard/profile" element={<ProfilePage />} />
+                        <Route path="trips/:id" element={<TripDetailsPage />} />
 
-                    <Route path="dashboard" element={<DashboardPage />} />
-                    <Route path="dashboard/add-trip" element={<AddTripPage />} />
-                    <Route path="dashboard/edit-trip/:id" element={<EditTripPage />} />
-                    <Route path="dashboard/profile" element={<ProfilePage />} />
-                    <Route path="trips/:id" element={<TripDetailsPage />} />
+                        {/* ŚCIEŻKI ADMINISTRATORA */}
+                        <Route
+                            path="admin"
+                            element={isAdmin ? <AdminDashboard /> : <Navigate to="/dashboard" />}
+                        />
+                        <Route
+                            path="admin/users"
+                            element={isAdmin ? <UserManagementPage /> : <Navigate to="/dashboard" />}
+                        />
+                        <Route
+                            path="admin/waypoints"
+                            element={isAdmin ? <AdminWaypointsPage /> : <Navigate to="/dashboard" />}
+                        />
+                    </Route>
 
-                    {/* ŚCIEŻKI ADMINISTRATORA */}
-                    <Route
-                        path="admin"
-                        element={isAdmin ? <AdminDashboard /> : <Navigate to="/dashboard" />}
-                    />
-                    <Route
-                        path="admin/users"
-                        element={isAdmin ? <UserManagementPage /> : <Navigate to="/dashboard" />}
-                    />
-                    {/* DODANO ŚCIEŻKĘ GLOBALNYCH WAYPOINTÓW: */}
-                    <Route
-                        path="admin/waypoints"
-                        element={isAdmin ? <AdminWaypointsPage /> : <Navigate to="/dashboard" />}
-                    />
-                </Route>
-
-                <Route path="*" element={<Navigate to="/dashboard" />} />
-            </Routes>
-        </Router>
+                    <Route path="*" element={<Navigate to="/dashboard" />} />
+                </Routes>
+            </Router>
+        </ErrorBoundary>
     );
 }
 

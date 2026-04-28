@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { tripsService } from '../../api/tripsService.ts';
 import { Mapbox } from '../../components/trips/Mapbox.tsx';
-import { MapPin, Sparkles, Loader2, Navigation, Clock, ShieldCheck, Trash2, CheckCircle2 } from 'lucide-react';
+import { MapPin, Sparkles, Loader2, Navigation, Clock, ShieldCheck, Trash2, CheckCircle2, AlertOctagon } from 'lucide-react';
 
 export const TripDetailsPage = () => {
     const { id } = useParams<{ id: string }>();
@@ -17,9 +17,11 @@ export const TripDetailsPage = () => {
         try {
             const res = await tripsService.getTripDetails(id);
             setTrip(res.data || res);
-        } catch (err) {
+            setError(null); // Czyścimy błędy przy udanym ładowaniu
+        } catch (err: any) {
             console.error("Load error:", err);
-            setError("Could not synchronize with the Voyager Database.");
+            // Wykorzystujemy komunikat z serwera lub fallback
+            setError(err.response?.data?.message || "Could not synchronize with the Voyager Database.");
         }
     }, [id]);
 
@@ -37,9 +39,9 @@ export const TripDetailsPage = () => {
                     w._id === wp._id ? { ...w, visited: newStatus } : w
                 )
             }));
-        } catch (err) {
+        } catch (err: any) {
             console.error("Sync error:", err);
-            alert("Critical failure: Could not update mission status.");
+            alert(err.response?.data?.message || "Critical failure: Could not update mission status.");
         }
     };
 
@@ -52,9 +54,9 @@ export const TripDetailsPage = () => {
                 ...prev,
                 waypoints: prev.waypoints.filter((w: any) => w._id !== wpId)
             }));
-        } catch (err) {
+        } catch (err: any) {
             console.error("Delete error:", err);
-            alert("Failed to remove point from database.");
+            alert(err.response?.data?.message || "Failed to remove point from database.");
         }
     };
 
@@ -64,10 +66,12 @@ export const TripDetailsPage = () => {
         try {
             await tripsService.generateAIWaypoints(id);
             await loadData();
-        } catch (err) {
-            // To ten błąd, który widzisz na screenie - sprawdź klucze w .env lub na backendzie
-            alert("AI Engine failure. Check your Groq API Key.");
-        } finally { setIsGenerating(false); }
+        } catch (err: any) {
+            // Tutaj err.message zawiera już sformatowany tekst z tripsService.ts
+            alert(err.message);
+        } finally {
+            setIsGenerating(false);
+        }
     };
 
     const handleWaypointClick = (wp: any) => {
@@ -78,7 +82,23 @@ export const TripDetailsPage = () => {
         }
     };
 
-    if (error) return <div className="p-20 text-red-500">{error}</div>;
+    // --- POPRAWIONY WIDOK BŁĘDU ---
+    if (error) return (
+        <div className="min-h-screen bg-zinc-950 flex items-center justify-center p-6">
+            <div className="bg-red-500/10 border border-red-500/20 p-8 rounded-[2rem] max-w-md text-center">
+                <AlertOctagon size={48} className="text-red-500 mx-auto mb-4" />
+                <h2 className="text-white font-bold text-xl mb-2">Data Retrieval Failed</h2>
+                <p className="text-zinc-500 text-sm mb-6">{error}</p>
+                <button
+                    onClick={() => window.location.reload()}
+                    className="px-6 py-2 bg-red-500 text-white rounded-xl font-bold text-xs uppercase tracking-widest"
+                >
+                    Retry Connection
+                </button>
+            </div>
+        </div>
+    );
+
     if (!trip) return (
         <div className="flex h-screen items-center justify-center bg-zinc-950">
             <Loader2 className="animate-spin text-zinc-500" size={40} />
@@ -86,7 +106,6 @@ export const TripDetailsPage = () => {
     );
 
     return (
-        /* z-0 tutaj sprawia, że MainLayout (pasek na górze) wygrywa walkę o warstwy */
         <div className="min-h-screen bg-zinc-950 text-zinc-100 p-8 relative z-0">
             <header className="max-w-6xl mx-auto flex justify-between items-end mb-12 border-b border-zinc-800 pb-8 relative">
                 <div>
@@ -161,7 +180,6 @@ export const TripDetailsPage = () => {
                                         <p className="text-purple-400 text-[10px] font-bold mb-2 flex items-center gap-1 uppercase tracking-tighter">
                                             <MapPin size={10} /> {wp.address || "Location verified by AI"}
                                         </p>
-                                        {/* Ustawienie line-clamp, które znika po najechaniu (hover) */}
                                         <p className="text-zinc-500 text-xs leading-relaxed line-clamp-3 group-hover:line-clamp-none transition-all duration-300">
                                             {wp.description}
                                         </p>

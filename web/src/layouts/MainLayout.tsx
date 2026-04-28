@@ -54,7 +54,7 @@ export const MainLayout: React.FC = () => {
                     </Link>
 
                     <Link to="/dashboard/profile" className="flex items-center p-3 hover:bg-indigo-800 rounded-lg transition">
-                        <span className="mr-3">👤</span> Profil i Preferencje
+                        <span className="mr-3">👤</span> Preferencje
                     </Link>
 
                     {/* WARUNKOWE RENDEROWANIE DLA ADMINA */}
