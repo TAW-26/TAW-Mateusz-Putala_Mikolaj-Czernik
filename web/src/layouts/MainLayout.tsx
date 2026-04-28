@@ -1,12 +1,36 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, Outlet } from 'react-router-dom';
 
 export const MainLayout: React.FC = () => {
     const navigate = useNavigate();
 
-    const userRaw = localStorage.getItem('user');
-    const userData = userRaw ? JSON.parse(userRaw) : null;
+    // 1. Tworzymy stan dla danych użytkownika
+    const [userData, setUserData] = useState<any>(null);
 
+    // 2. Funkcja pobierająca aktualne dane z localStorage
+    const loadUserData = () => {
+        const userRaw = localStorage.getItem('user');
+        if (userRaw) {
+            setUserData(JSON.parse(userRaw));
+        }
+    };
+
+    useEffect(() => {
+        // Pobierz dane na starcie
+        loadUserData();
+
+        // 3. Nasłuchuj na zdarzenie 'storage' (wywołujemy je w UserProfilePage)
+        window.addEventListener('storage', loadUserData);
+        // Oraz na nasze autorskie zdarzenie, jeśli go użyłeś
+        window.addEventListener('userUpdate', loadUserData);
+
+        return () => {
+            window.removeEventListener('storage', loadUserData);
+            window.removeEventListener('userUpdate', loadUserData);
+        };
+    }, []);
+
+    // Obliczamy wartości na podstawie aktualnego stanu
     const userRole = userData?.role || userData?.user?.role || 'user';
     const isAdmin = userRole === 'admin';
 
@@ -39,22 +63,21 @@ export const MainLayout: React.FC = () => {
 
                 <nav className="flex-1 p-4 space-y-2">
                     <Link to="/dashboard" className="flex items-center p-3 hover:bg-indigo-800 rounded-lg transition">
-                        <span className="mr-3">📊</span> Dashboard
+                        <span className="mr-3 text-lg">📊</span> Dashboard
                     </Link>
                     <Link to="/dashboard/add-trip" className="flex items-center p-3 hover:bg-indigo-800 rounded-lg transition">
-                        <span className="mr-3">✨</span> Nowa Wycieczka
+                        <span className="mr-3 text-lg">✨</span> Nowa Wycieczka
                     </Link>
 
                     <Link
                         to="/dashboard?filter=favorites"
                         className="flex items-center p-3 hover:bg-indigo-800 rounded-lg transition text-rose-300 font-medium"
                     >
-                        <span className="mr-3">❤️</span> Ulubione
+                        <span className="mr-3 text-lg">❤️</span> Ulubione
                     </Link>
 
-                    {/* PREFERENCJE - zostają bez zmian */}
                     <Link to="/dashboard/profile" className="flex items-center p-3 hover:bg-indigo-800 rounded-lg transition">
-                        <span className="mr-3">👤</span> Preferencje
+                        <span className="mr-3 text-lg">👤</span> Preferencje
                     </Link>
 
                     {isAdmin && (
@@ -78,7 +101,7 @@ export const MainLayout: React.FC = () => {
                         onClick={handleLogout}
                         className="w-full flex items-center p-3 text-red-300 hover:bg-red-900/30 rounded-lg transition"
                     >
-                        <span className="mr-3">🚪</span> Wyloguj
+                        <span className="mr-3 text-lg">🚪</span> Wyloguj
                     </button>
                 </div>
             </aside>
@@ -86,7 +109,6 @@ export const MainLayout: React.FC = () => {
             {/* MAIN CONTENT */}
             <main className="flex-1 h-screen overflow-y-auto">
                 <header className="bg-white h-16 shadow-sm flex items-center justify-end px-8 sticky top-0 z-10">
-                    {/* KLIKALNY PROFIL UŻYTKOWNIKA - teraz prowadzi do /dashboard/user-profile */}
                     <Link
                         to="/dashboard/user-profile"
                         className="flex items-center gap-3 hover:bg-gray-100 p-2 rounded-xl transition-all group"
