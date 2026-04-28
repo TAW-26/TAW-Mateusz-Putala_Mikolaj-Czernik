@@ -1,6 +1,7 @@
 const User = require('../models/User');
 const Trip = require('../models/Trip');
 const Waypoint = require('../models/Waypoint');
+const bcrypt = require('bcryptjs');
 
 exports.updateProfile = async (req, res) => {
     try {
@@ -27,6 +28,44 @@ exports.updateProfile = async (req, res) => {
     } catch (err) {
         // Jeśli np. email już istnieje w bazie, Mongoose wyrzuci błąd
         res.status(400).json({ success: false, error: err.message });
+    }
+};
+
+
+exports.changePassword = async (req, res) => {
+    try {
+        const { oldPassword, newPassword } = req.body;
+
+        // 1. Musisz użyć .select('+password'), bo w modelu masz 'select: false'
+        const user = await User.findById(req.user.id).select('+password');
+
+        if (!user) {
+            return res.status(404).json({ success: false, message: "Nie znaleziono użytkownika" });
+        }
+
+        // 2. Używamy Twojej metody z modelu: matchPassword
+        const isMatch = await user.matchPassword(oldPassword);
+
+        if (!isMatch) {
+            return res.status(400).json({
+                success: false,
+                message: "Obecne hasło jest nieprawidłowe"
+            });
+        }
+
+        // 3. Ustawiamy nowe hasło i wywołujemy .save()
+        // Dzięki temu zadziała Twoje UserSchema.pre('save'), które zahashuje nowe hasło
+        user.password = newPassword;
+        await user.save();
+
+        res.status(200).json({
+            success: true,
+            message: "Hasło zostało pomyślnie zmienione"
+        });
+
+    } catch (err) {
+        console.error("Błąd zmiany hasła:", err);
+        res.status(500).json({ success: false, error: err.message });
     }
 };
 

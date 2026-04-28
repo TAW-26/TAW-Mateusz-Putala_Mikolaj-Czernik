@@ -45,7 +45,6 @@ export const MainLayout: React.FC = () => {
                         <span className="mr-3">✨</span> Nowa Wycieczka
                     </Link>
 
-                    {/* DODANY LINK DO ULUBIONYCH */}
                     <Link
                         to="/dashboard?filter=favorites"
                         className="flex items-center p-3 hover:bg-indigo-800 rounded-lg transition text-rose-300 font-medium"
@@ -53,11 +52,11 @@ export const MainLayout: React.FC = () => {
                         <span className="mr-3">❤️</span> Ulubione
                     </Link>
 
+                    {/* PREFERENCJE - zostają bez zmian */}
                     <Link to="/dashboard/profile" className="flex items-center p-3 hover:bg-indigo-800 rounded-lg transition">
                         <span className="mr-3">👤</span> Preferencje
                     </Link>
 
-                    {/* WARUNKOWE RENDEROWANIE DLA ADMINA */}
                     {isAdmin && (
                         <div className="pt-4 mt-4 border-t border-indigo-800 animate-in fade-in duration-500 space-y-1">
                             <p className="px-3 text-[10px] uppercase text-indigo-400 font-black mb-2 tracking-[0.2em]">Command Center</p>
@@ -87,17 +86,25 @@ export const MainLayout: React.FC = () => {
             {/* MAIN CONTENT */}
             <main className="flex-1 h-screen overflow-y-auto">
                 <header className="bg-white h-16 shadow-sm flex items-center justify-end px-8 sticky top-0 z-10">
-                    <div className="flex items-center gap-3">
-                        {isAdmin && (
-                            <span className="px-2 py-0.5 bg-red-100 text-red-700 text-[10px] font-bold rounded uppercase border border-red-200">
-                                Admin Mode
+                    {/* KLIKALNY PROFIL UŻYTKOWNIKA - teraz prowadzi do /dashboard/user-profile */}
+                    <Link
+                        to="/dashboard/user-profile"
+                        className="flex items-center gap-3 hover:bg-gray-100 p-2 rounded-xl transition-all group"
+                    >
+                        <div className="flex flex-col items-end">
+                            {isAdmin && (
+                                <span className="px-2 py-0.5 bg-red-100 text-red-700 text-[9px] font-bold rounded uppercase border border-red-200">
+                                    Admin Mode
+                                </span>
+                            )}
+                            <span className="text-sm font-medium text-gray-600 group-hover:text-indigo-600 transition-colors">
+                                Witaj, {firstName}!
                             </span>
-                        )}
-                        <span className="text-sm font-medium text-gray-600">Witaj, {firstName}!</span>
-                        <div className="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-700 font-bold border border-indigo-200">
+                        </div>
+                        <div className="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-700 font-bold border border-indigo-200 group-hover:scale-105 group-hover:border-indigo-400 transition-all shadow-sm">
                             {initials}
                         </div>
-                    </div>
+                    </Link>
                 </header>
 
                 <div className="p-8">
