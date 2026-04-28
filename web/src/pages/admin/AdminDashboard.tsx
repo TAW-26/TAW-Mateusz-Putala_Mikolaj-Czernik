@@ -1,19 +1,38 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom'; // DODANO
 import { tripsService } from '../../api/tripsService';
-import { ShieldAlert, Globe, Users, Map as MapIcon, Loader2 } from 'lucide-react';
+import { ShieldAlert, Globe, Users, Map as MapIcon, Loader2, Edit3, Trash2 } from 'lucide-react'; // DODANO IKONY
 
 export const AdminDashboard = () => {
     const [allTrips, setAllTrips] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
+    const navigate = useNavigate(); // DODANO
 
-    useEffect(() => {
+    const fetchAdminStats = () => {
+        setLoading(true);
         tripsService.adminGetAllTrips()
             .then(res => {
                 setAllTrips(res.data || res);
                 setLoading(false);
             })
             .catch(() => setLoading(false));
+    };
+
+    useEffect(() => {
+        fetchAdminStats();
     }, []);
+
+    // FUNKCJA USUWANIA DLA ADMINA
+    const handleDeleteTrip = async (id: string) => {
+        if (window.confirm("CRITICAL ACTION: Czy na pewno chcesz trwale usunąć tę misję z bazy danych?")) {
+            try {
+                await tripsService.deleteTrip(id);
+                setAllTrips(prev => prev.filter(t => t._id !== id));
+            } catch (err) {
+                alert("Błąd autoryzacji lub połączenia z bazą.");
+            }
+        }
+    };
 
     if (loading) return <div className="h-screen flex items-center justify-center bg-zinc-950 text-white"><Loader2 className="animate-spin" /></div>;
 
@@ -51,12 +70,12 @@ export const AdminDashboard = () => {
                         <th className="p-6">Operative (User)</th>
                         <th className="p-6">Route</th>
                         <th className="p-6">Waypoints</th>
-                        <th className="p-6">Status</th>
+                        <th className="p-6 text-right">Management</th> {/* ZMIENIONO NAGŁÓWEK */}
                     </tr>
                     </thead>
                     <tbody className="divide-y divide-zinc-800">
                     {allTrips.map((trip) => (
-                        <tr key={trip._id} className="hover:bg-white/[0.02] transition-colors">
+                        <tr key={trip._id} className="hover:bg-white/[0.02] transition-colors group">
                             <td className="p-6 font-bold">{trip.title}</td>
                             <td className="p-6 text-sm text-zinc-400">
                                 {trip.user?.username || 'Unknown'}
@@ -66,10 +85,23 @@ export const AdminDashboard = () => {
                                 {trip.origin?.address.split(',')[0]} → {trip.destination?.address.split(',')[0]}
                             </td>
                             <td className="p-6 text-sm font-mono text-purple-400">{trip.waypoints?.length || 0}</td>
-                            <td className="p-6">
-                                    <span className="px-3 py-1 bg-emerald-500/10 text-emerald-500 text-[10px] font-black rounded-full border border-emerald-500/20 uppercase">
-                                        Active
-                                    </span>
+                            <td className="p-6 text-right"> {/* NOWA KOMÓRKA AKCJI */}
+                                <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-all duration-200">
+                                    <button
+                                        onClick={() => navigate(`/dashboard/edit-trip/${trip._id}`)}
+                                        className="p-2 hover:bg-blue-500/10 text-blue-400 rounded-lg transition-colors border border-transparent hover:border-blue-500/20"
+                                        title="Edit Mission"
+                                    >
+                                        <Edit3 size={16} />
+                                    </button>
+                                    <button
+                                        onClick={() => handleDeleteTrip(trip._id)}
+                                        className="p-2 hover:bg-red-500/10 text-red-500 rounded-lg transition-colors border border-transparent hover:border-red-500/20"
+                                        title="Terminate Data"
+                                    >
+                                        <Trash2 size={16} />
+                                    </button>
+                                </div>
                             </td>
                         </tr>
                     ))}
