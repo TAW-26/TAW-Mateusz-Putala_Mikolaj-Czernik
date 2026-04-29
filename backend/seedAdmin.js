@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const User = require('./src/models/User'); // upewnij się, że ścieżka do modelu jest poprawna
+const User = require('./src/models/User');
 const dotenv = require('dotenv');
 
 dotenv.config();
