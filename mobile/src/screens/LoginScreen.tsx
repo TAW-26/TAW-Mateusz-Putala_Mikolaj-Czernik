@@ -6,12 +6,45 @@ import {
     TextInput,
     TouchableOpacity,
     KeyboardAvoidingView,
-    Platform
+    Platform,
+    Alert,
+    ActivityIndicator
 } from 'react-native';
+import { useAuthStore } from '../store/authStore';
+import api from '../api/axiosInstance';
 
 export default function LoginScreen() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [loading, setLoading] = useState(false);
+    const setAuth = useAuthStore((state) => state.setAuth);
+
+    const handleLogin = async () => {
+        if (!email || !password) {
+            Alert.alert('Info', 'Check your credentials (admin@voyager.pl / Haslo123!)');
+            return;
+        }
+
+        setLoading(true);
+        try {
+            // Używamy instancji api, tak jak w Web
+            const response = await api.post('/auth/login', { email, password });
+
+            const { user, token } = response.data;
+            setAuth(user, token);
+
+            Alert.alert('Success', `Welcome back, ${user.name || 'Explorer'}!`);
+        } catch (error: any) {
+            console.log("Login error:", error);
+            let message = 'Nie udało się zalogować. Sprawdź dane.';
+            if (error.code === 'ERR_NETWORK') {
+                message = 'Błąd sieci: Serwer nie odpowiada. Sprawdź IP w axiosInstance.ts.';
+            }
+            Alert.alert('Login Failed', message);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     return (
         <KeyboardAvoidingView
@@ -19,33 +52,58 @@ export default function LoginScreen() {
             style={styles.container}
         >
             <View style={styles.inner}>
-                <Text style={styles.logoText}>VOYAGER AI</Text>
-                <Text style={styles.subtitle}>Witaj ponownie, podróżniku!</Text>
-
-                <View style={styles.inputContainer}>
-                    <TextInput
-                        style={styles.input}
-                        placeholder="Email"
-                        value={email}
-                        onChangeText={setEmail}
-                        keyboardType="email-address"
-                        autoCapitalize="none"
-                    />
-                    <TextInput
-                        style={styles.input}
-                        placeholder="Hasło"
-                        value={password}
-                        onChangeText={setPassword}
-                        secureTextEntry
-                    />
+                {/* Logo Section */}
+                <View style={styles.logoContainer}>
+                    <Text style={styles.logoIcon}>🧭</Text>
                 </View>
 
-                <TouchableOpacity style={styles.button} onPress={() => alert('Logowanie...')}>
-                    <Text style={styles.buttonText}>Zaloguj się</Text>
-                </TouchableOpacity>
+                {/* NAPRAWIONE: Zamiast <h1> używamy <Text> z odpowiednim stylem */}
+                <Text style={styles.webTitle}>Welcome Back</Text>
+                <Text style={styles.subtitle}>Log in to your Voyager AI account</Text>
 
-                <TouchableOpacity style={styles.linkButton}>
-                    <Text style={styles.linkText}>Nie masz konta? Zarejestruj się</Text>
+                <View style={styles.form}>
+                    <View style={styles.inputGroup}>
+                        <Text style={styles.label}>Email Address</Text>
+                        <TextInput
+                            style={styles.input}
+                            placeholder="admin@voyager.pl"
+                            placeholderTextColor="#a1a1aa"
+                            value={email}
+                            onChangeText={setEmail}
+                            autoCapitalize="none"
+                            keyboardType="email-address"
+                        />
+                    </View>
+
+                    <View style={styles.inputGroup}>
+                        <Text style={styles.label}>Password</Text>
+                        <TextInput
+                            style={styles.input}
+                            placeholder="••••••••"
+                            placeholderTextColor="#a1a1aa"
+                            value={password}
+                            onChangeText={setPassword}
+                            secureTextEntry
+                        />
+                    </View>
+
+                    <TouchableOpacity
+                        style={[styles.button, loading && { opacity: 0.5 }]}
+                        onPress={handleLogin}
+                        disabled={loading}
+                    >
+                        {loading ? (
+                            <ActivityIndicator color="#fff" />
+                        ) : (
+                            <Text style={styles.buttonText}>SIGN IN</Text>
+                        )}
+                    </TouchableOpacity>
+                </View>
+
+                <TouchableOpacity style={styles.registerLink}>
+                    <Text style={styles.registerText}>
+                        Don't have an account? <Text style={styles.boldText}>Register here</Text>
+                    </Text>
                 </TouchableOpacity>
             </View>
         </KeyboardAvoidingView>
@@ -53,29 +111,52 @@ export default function LoginScreen() {
 }
 
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: '#f5f6fa' },
-    inner: { flex: 1, justifyContent: 'center', padding: 30, alignItems: 'center' },
-    logoText: { fontSize: 32, fontWeight: 'bold', color: '#2ecc71', letterSpacing: 2 },
-    subtitle: { fontSize: 16, color: '#7f8c8d', marginBottom: 40 },
-    inputContainer: { width: '100%', marginBottom: 20 },
+    container: { flex: 1, backgroundColor: '#fff' },
+    inner: { flex: 1, justifyContent: 'center', padding: 24, alignItems: 'center' },
+    logoContainer: {
+        padding: 20,
+        backgroundColor: '#18181b',
+        borderRadius: 30,
+        marginBottom: 16,
+        elevation: 8,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.2,
+        shadowRadius: 8,
+    },
+    logoIcon: { fontSize: 32 },
+    webTitle: { fontSize: 30, fontWeight: 'bold', color: '#18181b', marginBottom: 8 },
+    subtitle: { color: '#71717a', fontSize: 14, marginBottom: 40 },
+    form: { width: '100%' },
+    inputGroup: { marginBottom: 16 },
+    label: {
+        fontSize: 10,
+        fontWeight: '900',
+        color: '#a1a1aa',
+        marginBottom: 8,
+        marginLeft: 4,
+        letterSpacing: 1,
+        textTransform: 'uppercase'
+    },
     input: {
-        backgroundColor: '#fff',
-        padding: 15,
-        borderRadius: 10,
-        marginBottom: 15,
-        borderWidth: 1,
-        borderColor: '#dcdde1',
-        fontSize: 16
+        backgroundColor: '#f4f4f5',
+        borderWidth: 2,
+        borderColor: '#e4e4e7',
+        borderRadius: 16,
+        padding: 16,
+        fontSize: 16,
+        color: '#18181b'
     },
     button: {
-        backgroundColor: '#2ecc71',
-        width: '100%',
-        padding: 15,
-        borderRadius: 10,
+        backgroundColor: '#18181b',
+        borderRadius: 16,
+        padding: 18,
         alignItems: 'center',
-        elevation: 3, // Cień na Androidzie
+        marginTop: 20,
+        elevation: 4,
     },
-    buttonText: { color: '#fff', fontWeight: 'bold', fontSize: 18 },
-    linkButton: { marginTop: 20 },
-    linkText: { color: '#3498db' }
+    buttonText: { color: '#fff', fontWeight: 'bold', letterSpacing: 1, fontSize: 13 },
+    registerLink: { marginTop: 32 },
+    registerText: { color: '#71717a', fontSize: 14 },
+    boldText: { color: '#18181b', fontWeight: 'bold' }
 });
