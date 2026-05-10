@@ -27,19 +27,27 @@ export default function LoginScreen() {
 
         setLoading(true);
         try {
-            // Używamy instancji api, tak jak w Web
+            // Logowanie do backendu na Renderze
             const response = await api.post('/auth/login', { email, password });
 
             const { user, token } = response.data;
+
+            // Ustawienie autoryzacji w store - to automatycznie przełączy ekran w App.tsx
             setAuth(user, token);
 
-            Alert.alert('Success', `Welcome back, ${user.name || 'Explorer'}!`);
+            // Log w konsoli zamiast Alertu sukcesu sprawia, że przejście jest płynniejsze
+            console.log("Login success for:", user.email);
+
         } catch (error: any) {
             console.log("Login error:", error);
             let message = 'Nie udało się zalogować. Sprawdź dane.';
+
             if (error.code === 'ERR_NETWORK') {
-                message = 'Błąd sieci: Serwer nie odpowiada. Sprawdź IP w axiosInstance.ts.';
+                message = 'Błąd sieci: Serwer nie odpowiada. Sprawdź połączenie z internetem.';
+            } else if (error.response?.status === 401) {
+                message = 'Błędny e-mail lub hasło.';
             }
+
             Alert.alert('Login Failed', message);
         } finally {
             setLoading(false);
@@ -57,7 +65,6 @@ export default function LoginScreen() {
                     <Text style={styles.logoIcon}>🧭</Text>
                 </View>
 
-                {/* NAPRAWIONE: Zamiast <h1> używamy <Text> z odpowiednim stylem */}
                 <Text style={styles.webTitle}>Welcome Back</Text>
                 <Text style={styles.subtitle}>Log in to your Voyager AI account</Text>
 
