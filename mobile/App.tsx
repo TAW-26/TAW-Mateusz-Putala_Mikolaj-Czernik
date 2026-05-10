@@ -4,7 +4,8 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useAuthStore } from './src/store/authStore';
 import LoginScreen from './src/screens/LoginScreen';
 import HomeScreen from './src/screens/HomeScreen';
-import AddTripScreen from './src/screens/AddTripScreen'; // 1. Importujemy nowy ekran
+import AddTripScreen from './src/screens/AddTripScreen';
+import TripDetailsScreen from './src/screens/TripDetailsScreen'; // 1. Importujemy nowy ekran
 
 const Stack = createNativeStackNavigator();
 
@@ -19,6 +20,7 @@ export default function App() {
                     <>
                         <Stack.Screen name="Home" component={HomeScreen} />
                         <Stack.Screen name="AddTrip" component={AddTripScreen} />
+                        <Stack.Screen name="TripDetails" component={TripDetailsScreen} />
                         {/* 2. Dodajemy ekran do stosu */}
                     </>
                 ) : (

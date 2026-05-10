@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react'; // DODANO: useCallback
 import {
     StyleSheet,
     Text,
@@ -12,6 +12,7 @@ import {
 import { Compass, Activity, LogOut, MapPin, Plus } from 'lucide-react-native';
 import api from '../api/axiosInstance';
 import { useAuthStore } from '../store/authStore';
+import { useFocusEffect } from '@react-navigation/native'; // DODANO: hook do odświeżania
 
 // Interfejs danych wycieczki
 interface Trip {
@@ -22,38 +23,36 @@ interface Trip {
     isFavorite?: boolean;
 }
 
-// DODANO: Destrukturyzacja navigation z propów
 export default function HomeScreen({ navigation }: any) {
     const [trips, setTrips] = useState<Trip[]>([]);
     const [loading, setLoading] = useState(true);
     const logout = useAuthStore((state) => state.logout);
 
     const loadTrips = async () => {
-        setLoading(true);
+        // Przy odświeżaniu w tle nie zawsze chcemy pokazywać duży ActivityIndicator,
+        // ale przy pierwszym ładowaniu jest on wskazany.
         try {
             const res = await api.get('/trips');
-            console.log("Dane z API pobrane pomyślnie");
-
-            // Obsługa różnych formatów odpowiedzi z API
             const data = res.data.data || res.data || [];
             setTrips(Array.isArray(data) ? data : []);
         } catch (err: any) {
             console.error("Błąd API:", err.response?.data || err.message);
             let errorMessage = "Nie udało się pobrać wycieczek.";
             if (err.response?.status === 401) errorMessage = "Sesja wygasła. Zaloguj się ponownie.";
-
             Alert.alert("Problem z połączeniem", errorMessage);
         } finally {
             setLoading(false);
         }
     };
 
-    useEffect(() => {
-        loadTrips();
-    }, []);
+    // Automatyczne odświeżanie listy przy każdym powrocie na ekran Home
+    useFocusEffect(
+        useCallback(() => {
+            loadTrips();
+        }, [])
+    );
 
     const handleLogout = () => {
-        console.log("Inicjacja wylogowania...");
         logout();
     };
 
@@ -75,7 +74,6 @@ export default function HomeScreen({ navigation }: any) {
                         onPress={handleLogout}
                         style={styles.logoutBtn}
                         activeOpacity={0.7}
-                        hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }}
                     >
                         <LogOut size={22} color="#ef4444" />
                     </TouchableOpacity>
@@ -88,14 +86,14 @@ export default function HomeScreen({ navigation }: any) {
                     <Text style={styles.statsLabel}>Total Expeditions</Text>
                 </View>
 
-                {/* Sekcja AI Prompt - Przenosi do AddTrip */}
+                {/* Sekcja AI Prompt */}
                 <View style={styles.aiCard}>
                     <Text style={styles.aiTitle}>Ready for a new discovery?</Text>
                     <Text style={styles.aiSub}>Use Llama 3.3 to generate a new itinerary.</Text>
 
                     <TouchableOpacity
                         style={styles.aiButton}
-                        onPress={() => navigation.navigate('AddTrip')} // AKCJA NAWIGACJI
+                        onPress={() => navigation.navigate('AddTrip')}
                     >
                         <Plus size={14} color="#18181b" style={{marginRight: 6}} />
                         <Text style={styles.aiButtonText}>GENERATE WITH AI</Text>
@@ -110,7 +108,12 @@ export default function HomeScreen({ navigation }: any) {
                     </View>
                 ) : (
                     trips.map((trip) => (
-                        <View key={trip._id} style={styles.tripCard}>
+                        <TouchableOpacity
+                            key={trip._id}
+                            style={styles.tripCard}
+                            activeOpacity={0.8}
+                            onPress={() => navigation.navigate('TripDetails', { id: trip._id })} // NAWIGACJA DO SZCZEGÓŁÓW
+                        >
                             <View style={styles.tripHeader}>
                                 <Text style={styles.tripTitle}>{trip.title}</Text>
                                 <Compass size={16} color="#e4e4e7" />
@@ -121,11 +124,10 @@ export default function HomeScreen({ navigation }: any) {
                                     {trip.origin?.address || 'Unknown'} ➔ {trip.destination?.address || 'Unknown'}
                                 </Text>
                             </View>
-                        </View>
+                        </TouchableOpacity>
                     ))
                 )}
 
-                {/* Informacja przy pustej liście */}
                 {!loading && trips.length === 0 && (
                     <Text style={{ textAlign: 'center', color: '#a1a1aa', marginTop: 20 }}>
                         No trips found. Start your first mission!
