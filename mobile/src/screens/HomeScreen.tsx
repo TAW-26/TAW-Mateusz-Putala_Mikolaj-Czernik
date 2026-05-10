@@ -13,6 +13,7 @@ import { Compass, Activity, LogOut, MapPin, Plus } from 'lucide-react-native';
 import api from '../api/axiosInstance';
 import { useAuthStore } from '../store/authStore';
 
+// Interfejs danych wycieczki
 interface Trip {
     _id: string;
     title: string;
@@ -21,7 +22,8 @@ interface Trip {
     isFavorite?: boolean;
 }
 
-export default function HomeScreen() {
+// DODANO: Destrukturyzacja navigation z propów
+export default function HomeScreen({ navigation }: any) {
     const [trips, setTrips] = useState<Trip[]>([]);
     const [loading, setLoading] = useState(true);
     const logout = useAuthStore((state) => state.logout);
@@ -31,13 +33,16 @@ export default function HomeScreen() {
         try {
             const res = await api.get('/trips');
             console.log("Dane z API pobrane pomyślnie");
+
+            // Obsługa różnych formatów odpowiedzi z API
             const data = res.data.data || res.data || [];
             setTrips(Array.isArray(data) ? data : []);
         } catch (err: any) {
             console.error("Błąd API:", err.response?.data || err.message);
             let errorMessage = "Nie udało się pobrać wycieczek.";
-            if (err.response?.status === 401) errorMessage = "Sesja wygasła.";
-            Alert.alert("Problem", errorMessage);
+            if (err.response?.status === 401) errorMessage = "Sesja wygasła. Zaloguj się ponownie.";
+
+            Alert.alert("Problem z połączeniem", errorMessage);
         } finally {
             setLoading(false);
         }
@@ -47,7 +52,6 @@ export default function HomeScreen() {
         loadTrips();
     }, []);
 
-    // Funkcja pomocnicza dla wylogowania
     const handleLogout = () => {
         console.log("Inicjacja wylogowania...");
         logout();
@@ -56,6 +60,7 @@ export default function HomeScreen() {
     return (
         <SafeAreaView style={styles.container}>
             <ScrollView contentContainerStyle={styles.scrollContent}>
+
                 {/* Header */}
                 <View style={styles.header}>
                     <View>
@@ -66,7 +71,6 @@ export default function HomeScreen() {
                         <Text style={styles.title}>Your Journeys</Text>
                     </View>
 
-                    {/* POPRAWIONY PRZYCISK */}
                     <TouchableOpacity
                         onPress={handleLogout}
                         style={styles.logoutBtn}
@@ -77,18 +81,22 @@ export default function HomeScreen() {
                     </TouchableOpacity>
                 </View>
 
-                {/* Statystyka */}
+                {/* Statystyka wycieczek */}
                 <View style={styles.statsCard}>
                     <Compass size={24} color="#18181b" style={{marginBottom: 8}} />
                     <Text style={styles.statsNumber}>{loading ? '...' : trips.length}</Text>
                     <Text style={styles.statsLabel}>Total Expeditions</Text>
                 </View>
 
-                {/* Sekcja AI Prompt */}
+                {/* Sekcja AI Prompt - Przenosi do AddTrip */}
                 <View style={styles.aiCard}>
                     <Text style={styles.aiTitle}>Ready for a new discovery?</Text>
                     <Text style={styles.aiSub}>Use Llama 3.3 to generate a new itinerary.</Text>
-                    <TouchableOpacity style={styles.aiButton}>
+
+                    <TouchableOpacity
+                        style={styles.aiButton}
+                        onPress={() => navigation.navigate('AddTrip')} // AKCJA NAWIGACJI
+                    >
                         <Plus size={14} color="#18181b" style={{marginRight: 6}} />
                         <Text style={styles.aiButtonText}>GENERATE WITH AI</Text>
                     </TouchableOpacity>
@@ -97,7 +105,9 @@ export default function HomeScreen() {
                 {/* Lista Wycieczek */}
                 <Text style={styles.sectionTitle}>Recent Trips</Text>
                 {loading ? (
-                    <ActivityIndicator color="#18181b" size="large" />
+                    <View style={{ marginTop: 20 }}>
+                        <ActivityIndicator color="#18181b" size="large" />
+                    </View>
                 ) : (
                     trips.map((trip) => (
                         <View key={trip._id} style={styles.tripCard}>
@@ -114,6 +124,13 @@ export default function HomeScreen() {
                         </View>
                     ))
                 )}
+
+                {/* Informacja przy pustej liście */}
+                {!loading && trips.length === 0 && (
+                    <Text style={{ textAlign: 'center', color: '#a1a1aa', marginTop: 20 }}>
+                        No trips found. Start your first mission!
+                    </Text>
+                )}
             </ScrollView>
         </SafeAreaView>
     );
@@ -122,7 +139,12 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: '#fff' },
     scrollContent: { padding: 24 },
-    header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 32 },
+    header: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 32
+    },
     badgeRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 4 },
     badge: { fontSize: 10, fontWeight: '900', color: '#a1a1aa', letterSpacing: 2 },
     title: { fontSize: 32, fontWeight: 'bold', color: '#18181b', letterSpacing: -1 },

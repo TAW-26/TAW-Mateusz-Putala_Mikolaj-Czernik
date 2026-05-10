@@ -1,24 +1,28 @@
 import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { useAuthStore } from './src/store/authStore'; // Importujemy stan autoryzacji
+import { useAuthStore } from './src/store/authStore';
 import LoginScreen from './src/screens/LoginScreen';
-import HomeScreen from './src/screens/HomeScreen'; // Załóżmy, że tak nazwiesz nowy ekran
+import HomeScreen from './src/screens/HomeScreen';
+import AddTripScreen from './src/screens/AddTripScreen'; // 1. Importujemy nowy ekran
 
 const Stack = createNativeStackNavigator();
 
 export default function App() {
-    // Pobieramy token ze store'a, aby wiedzieć, czy użytkownik jest zalogowany
     const token = useAuthStore((state) => state.token);
 
     return (
         <NavigationContainer>
             <Stack.Navigator screenOptions={{ headerShown: false }}>
                 {token ? (
-                    // Jeśli mamy token, pokazujemy ekrany dla zalogowanych
-                    <Stack.Screen name="Home" component={HomeScreen} />
+                    // Grupa ekranów dostępnych po zalogowaniu
+                    <>
+                        <Stack.Screen name="Home" component={HomeScreen} />
+                        <Stack.Screen name="AddTrip" component={AddTripScreen} />
+                        {/* 2. Dodajemy ekran do stosu */}
+                    </>
                 ) : (
-                    // Jeśli nie ma tokena, pokazujemy logowanie
+                    // Grupa ekranów dla niezalogowanych
                     <Stack.Screen name="Login" component={LoginScreen} />
                 )}
             </Stack.Navigator>
