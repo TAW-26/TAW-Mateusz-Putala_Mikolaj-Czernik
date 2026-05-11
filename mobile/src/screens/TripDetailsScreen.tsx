@@ -10,7 +10,6 @@ import {
 } from 'lucide-react-native';
 import { tripsService } from '../api/tripsService';
 
-// Włączenie animacji dla Androida
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
     UIManager.setLayoutAnimationEnabledExperimental(true);
 }
@@ -20,13 +19,14 @@ export default function TripDetailsScreen({ route, navigation }: any) {
     const [trip, setTrip] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [isGenerating, setIsGenerating] = useState(false);
-    const [expandedId, setExpandedId] = useState<string | null>(null); // Stan do rozwijania opisu
+    const [expandedId, setExpandedId] = useState<string | null>(null);
     const mapRef = useRef<MapView>(null);
 
     const loadData = useCallback(async () => {
         try {
             const res = await tripsService.getTripDetails(id);
-            setTrip(res.data || res);
+            const data = res.data || res;
+            setTrip(data);
         } catch (err: any) {
             Alert.alert("System Failure", "Could not sync with Voyager DB.");
             navigation.goBack();
@@ -40,7 +40,6 @@ export default function TripDetailsScreen({ route, navigation }: any) {
     const handleWaypointPress = (wp: any) => {
         const lat = wp.location?.lat || wp.lat;
         const lng = wp.location?.lng || wp.lng;
-
         if (mapRef.current && lat && lng) {
             mapRef.current.animateToRegion({
                 latitude: lat,
@@ -51,9 +50,7 @@ export default function TripDetailsScreen({ route, navigation }: any) {
         }
     };
 
-    // FUNKCJA ROZWIJAJĄCA OPIS
     const toggleDescription = (id: string) => {
-        // Dodajemy delikatną animację przejścia
         LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
         setExpandedId(expandedId === id ? null : id);
     };
@@ -131,7 +128,11 @@ export default function TripDetailsScreen({ route, navigation }: any) {
                 </TouchableOpacity>
             </View>
 
-            <ScrollView showsVerticalScrollIndicator={false}>
+            {/* Kluczowe: contentContainerStyle z flexGrow: 1 */}
+            <ScrollView
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={{ flexGrow: 1 }}
+            >
                 <View style={styles.mapContainer}>
                     <MapView
                         ref={mapRef}
@@ -165,16 +166,16 @@ export default function TripDetailsScreen({ route, navigation }: any) {
                     </View>
 
                     {trip.waypoints?.map((wp: any, index: number) => {
-                        const isExpanded = expandedId === wp._id; // Sprawdzamy, czy ten punkt jest rozwinięty
+                        const isExpanded = expandedId === wp._id;
 
                         return (
                             <TouchableOpacity
                                 key={wp._id || index}
                                 style={[styles.wpCard, wp.visited && styles.wpVisited]}
                                 onPress={() => handleWaypointPress(wp)}
-                                onLongPress={() => toggleDescription(wp._id)} // Długie przytrzymanie rozwija opis
-                                delayLongPress={400}
-                                activeOpacity={0.7}
+                                onLongPress={() => toggleDescription(wp._id)}
+                                delayLongPress={350}
+                                activeOpacity={0.8}
                             >
                                 <View style={styles.wpNumberContainer}>
                                     <TouchableOpacity
@@ -189,29 +190,40 @@ export default function TripDetailsScreen({ route, navigation }: any) {
                                 <View style={styles.wpContent}>
                                     <View style={styles.wpHeader}>
                                         <Text style={[styles.wpName, wp.visited && styles.textStrikethrough]}>{wp.name}</Text>
-                                        <TouchableOpacity onPress={() => deleteWaypoint(wp._id)}>
+                                        <TouchableOpacity onPress={() => deleteWaypoint(wp._id)} style={styles.deleteBtn}>
                                             <Trash2 size={16} color="#ef4444" />
                                         </TouchableOpacity>
                                     </View>
                                     <Text style={styles.wpAddress}>{wp.address || "Location Verified"}</Text>
 
-                                    {/* DYNAMICZNE ROZWIJANIE TEKSTU */}
-                                    <Text
-                                        style={styles.wpDesc}
-                                        numberOfLines={isExpanded ? undefined : 2}
-                                    >
-                                        {wp.description}
-                                    </Text>
-
-                                    {isExpanded && (
-                                        <Text style={styles.expandHint}>Hold again to collapse</Text>
-                                    )}
+                                    {/* SEKCJA OPISU - KOMPLETNIE PRZEBUDOWANA DLA PEWNOŚCI WYŚWIETLANIA */}
+                                    <View style={styles.descriptionContainer}>
+                                        {isExpanded ? (
+                                            <View style={styles.expandedBox}>
+                                                <Text
+                                                    key={`full-${wp._id}`}
+                                                    style={styles.wpDescFull}
+                                                >
+                                                    {wp.description ? wp.description.trim() : "No description available."}
+                                                </Text>
+                                                <Text style={styles.expandHint}>Hold to collapse</Text>
+                                            </View>
+                                        ) : (
+                                            <Text
+                                                key={`short-${wp._id}`}
+                                                style={styles.wpDescShort}
+                                                numberOfLines={2}
+                                            >
+                                                {wp.description ? wp.description.trim() : "No description available."}
+                                            </Text>
+                                        )}
+                                    </View>
                                 </View>
                             </TouchableOpacity>
                         );
                     })}
                 </View>
-                <View style={{ height: 50 }} />
+                <View style={{ height: 60 }} />
             </ScrollView>
         </SafeAreaView>
     );
@@ -232,18 +244,30 @@ const styles = StyleSheet.create({
     content: { padding: 24 },
     sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 20 },
     sectionTitle: { fontSize: 10, fontWeight: '900', color: '#71717a', letterSpacing: 2 },
-    wpCard: { flexDirection: 'row', marginBottom: 4 },
+    wpCard: { flexDirection: 'row', marginBottom: 12 }, // Usunięto minHeight
     wpVisited: { opacity: 0.6 },
     wpNumberContainer: { alignItems: 'center', width: 40 },
     checkCircle: { width: 32, height: 32, borderRadius: 16, backgroundColor: '#f4f4f5', justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: '#e4e4e7' },
     checkActive: { backgroundColor: '#10b981', borderColor: '#10b981' },
     wpIndex: { fontSize: 12, fontWeight: 'bold', color: '#71717a' },
     line: { width: 2, flex: 1, backgroundColor: '#f4f4f5', marginVertical: 4 },
-    wpContent: { flex: 1, marginLeft: 12, paddingBottom: 24 },
+    wpContent: { flex: 1, marginLeft: 12 },
     wpHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
-    wpName: { fontSize: 16, fontWeight: 'bold', color: '#18181b' },
+    wpName: { fontSize: 16, fontWeight: 'bold', color: '#18181b', flex: 1 },
+    deleteBtn: { padding: 4 },
     textStrikethrough: { textDecorationLine: 'line-through', color: '#a1a1aa' },
-    wpAddress: { fontSize: 10, fontWeight: 'bold', color: '#a855f7', textTransform: 'uppercase', marginVertical: 4 },
-    wpDesc: { fontSize: 13, color: '#71717a', lineHeight: 18 },
-    expandHint: { fontSize: 10, color: '#a855f7', marginTop: 8, fontStyle: 'italic' }
+    wpAddress: { fontSize: 10, fontWeight: 'bold', color: '#a855f7', textTransform: 'uppercase', marginBottom: 4 },
+
+    descriptionContainer: { marginTop: 2 },
+    wpDescShort: { fontSize: 13, color: '#71717a', lineHeight: 18 },
+    wpDescFull: { fontSize: 13, color: '#3f3f46', lineHeight: 20 },
+    expandedBox: {
+        backgroundColor: '#fdfaff',
+        padding: 12,
+        borderRadius: 8,
+        borderLeftWidth: 3,
+        borderLeftColor: '#a855f7',
+        marginTop: 6
+    },
+    expandHint: { fontSize: 10, color: '#a855f7', marginTop: 10, fontStyle: 'italic', fontWeight: 'bold' }
 });
