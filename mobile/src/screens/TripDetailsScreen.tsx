@@ -5,8 +5,8 @@ import {
 } from 'react-native';
 import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 import {
-    ChevronLeft, Sparkles, MapPin, Navigation,
-    Trash2, CheckCircle2, Clock, ShieldCheck
+    ChevronLeft, Sparkles, Trash2, CheckCircle2, Clock,
+    ShieldCheck, Heart, Settings
 } from 'lucide-react-native';
 import { tripsService } from '../api/tripsService';
 
@@ -25,8 +25,7 @@ export default function TripDetailsScreen({ route, navigation }: any) {
     const loadData = useCallback(async () => {
         try {
             const res = await tripsService.getTripDetails(id);
-            const data = res.data || res;
-            setTrip(data);
+            setTrip(res.data || res);
         } catch (err: any) {
             Alert.alert("System Failure", "Could not sync with Voyager DB.");
             navigation.goBack();
@@ -36,6 +35,17 @@ export default function TripDetailsScreen({ route, navigation }: any) {
     }, [id, navigation]);
 
     useEffect(() => { loadData(); }, [loadData]);
+
+    const toggleFavorite = async () => {
+        try {
+            const newStatus = !trip.isFavorite;
+            setTrip((prev: any) => ({ ...prev, isFavorite: newStatus }));
+            await tripsService.updateTrip(id, { isFavorite: newStatus });
+        } catch (err) {
+            setTrip((prev: any) => ({ ...prev, isFavorite: !prev.isFavorite }));
+            Alert.alert("Error", "Could not update favorite status.");
+        }
+    };
 
     const handleWaypointPress = (wp: any) => {
         const lat = wp.location?.lat || wp.lat;
@@ -50,9 +60,9 @@ export default function TripDetailsScreen({ route, navigation }: any) {
         }
     };
 
-    const toggleDescription = (id: string) => {
+    const toggleDescription = (wpId: string) => {
         LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-        setExpandedId(expandedId === id ? null : id);
+        setExpandedId(prev => (prev === wpId ? null : wpId));
     };
 
     const handleGenerateAI = async () => {
@@ -106,12 +116,19 @@ export default function TripDetailsScreen({ route, navigation }: any) {
         <View style={styles.centered}><ActivityIndicator color="#18181b" size="large" /></View>
     );
 
+    const headerHitSlop = { top: 20, bottom: 20, left: 20, right: 20 };
+
     return (
         <SafeAreaView style={styles.container}>
             <View style={styles.header}>
-                <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
+                <TouchableOpacity
+                    onPress={() => navigation.goBack()}
+                    style={styles.backBtn}
+                    hitSlop={headerHitSlop}
+                >
                     <ChevronLeft color="#18181b" size={24} />
                 </TouchableOpacity>
+
                 <View style={styles.headerInfo}>
                     <View style={styles.missionBadge}>
                         <ShieldCheck size={10} color="#a855f7" />
@@ -119,20 +136,41 @@ export default function TripDetailsScreen({ route, navigation }: any) {
                     </View>
                     <Text style={styles.title} numberOfLines={1}>{trip.title}</Text>
                 </View>
-                <TouchableOpacity
-                    onPress={handleGenerateAI}
-                    disabled={isGenerating}
-                    style={[styles.aiBtn, isGenerating && { opacity: 0.5 }]}
-                >
-                    {isGenerating ? <ActivityIndicator size="small" color="#fff" /> : <Sparkles size={20} color="#fff" />}
-                </TouchableOpacity>
+
+                <View style={styles.headerActions}>
+                    <TouchableOpacity
+                        onPress={toggleFavorite}
+                        style={styles.actionBtn}
+                        hitSlop={headerHitSlop}
+                    >
+                        <Heart
+                            size={20}
+                            color={trip.isFavorite ? "#f43f5e" : "#18181b"}
+                            fill={trip.isFavorite ? "#f43f5e" : "none"}
+                        />
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                        onPress={() => navigation.navigate('EditTrip', { id })}
+                        style={styles.actionBtn}
+                        hitSlop={headerHitSlop}
+                    >
+                        <Settings size={20} color="#18181b" />
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                        onPress={handleGenerateAI}
+                        disabled={isGenerating}
+                        style={[styles.aiBtn, isGenerating && { opacity: 0.5 }]}
+                        hitSlop={headerHitSlop}
+                    >
+                        {isGenerating ? <ActivityIndicator size="small" color="#fff" /> : <Sparkles size={20} color="#fff" />}
+                    </TouchableOpacity>
+                </View>
             </View>
 
-            {/* Kluczowe: contentContainerStyle z flexGrow: 1 */}
-            <ScrollView
-                showsVerticalScrollIndicator={false}
-                contentContainerStyle={{ flexGrow: 1 }}
-            >
+            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ flexGrow: 1 }}>
+                {/* ... reszta kodu bez zmian ... */}
                 <View style={styles.mapContainer}>
                     <MapView
                         ref={mapRef}
@@ -167,7 +205,6 @@ export default function TripDetailsScreen({ route, navigation }: any) {
 
                     {trip.waypoints?.map((wp: any, index: number) => {
                         const isExpanded = expandedId === wp._id;
-
                         return (
                             <TouchableOpacity
                                 key={wp._id || index}
@@ -190,31 +227,23 @@ export default function TripDetailsScreen({ route, navigation }: any) {
                                 <View style={styles.wpContent}>
                                     <View style={styles.wpHeader}>
                                         <Text style={[styles.wpName, wp.visited && styles.textStrikethrough]}>{wp.name}</Text>
-                                        <TouchableOpacity onPress={() => deleteWaypoint(wp._id)} style={styles.deleteBtn}>
+                                        <TouchableOpacity onPress={() => deleteWaypoint(wp._id)} style={styles.deleteAction}>
                                             <Trash2 size={16} color="#ef4444" />
                                         </TouchableOpacity>
                                     </View>
                                     <Text style={styles.wpAddress}>{wp.address || "Location Verified"}</Text>
 
-                                    {/* SEKCJA OPISU - KOMPLETNIE PRZEBUDOWANA DLA PEWNOŚCI WYŚWIETLANIA */}
                                     <View style={styles.descriptionContainer}>
                                         {isExpanded ? (
                                             <View style={styles.expandedBox}>
-                                                <Text
-                                                    key={`full-${wp._id}`}
-                                                    style={styles.wpDescFull}
-                                                >
-                                                    {wp.description ? wp.description.trim() : "No description available."}
+                                                <Text style={styles.wpDescFull}>
+                                                    {wp.description || "No tactical data available."}
                                                 </Text>
-                                                <Text style={styles.expandHint}>Hold to collapse</Text>
+                                                <Text style={styles.expandHint}>Hold again to collapse</Text>
                                             </View>
                                         ) : (
-                                            <Text
-                                                key={`short-${wp._id}`}
-                                                style={styles.wpDescShort}
-                                                numberOfLines={2}
-                                            >
-                                                {wp.description ? wp.description.trim() : "No description available."}
+                                            <Text style={styles.wpDescShort} numberOfLines={2}>
+                                                {wp.description || "No tactical data available."}
                                             </Text>
                                         )}
                                     </View>
@@ -232,32 +261,55 @@ export default function TripDetailsScreen({ route, navigation }: any) {
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: '#fff' },
     centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-    header: { flexDirection: 'row', alignItems: 'center', padding: 16, borderBottomWidth: 1, borderBottomColor: '#f4f4f5' },
-    backBtn: { padding: 8, backgroundColor: '#f4f4f5', borderRadius: 12 },
-    headerInfo: { flex: 1, marginLeft: 16 },
+    header: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 16,
+        paddingBottom: 20,
+        // KLUCZOWA ZMIANA: Duży odstęp od góry dla testu dotyku
+        paddingTop: Platform.OS === 'android' ? 45 : 30,
+        borderBottomWidth: 1,
+        borderBottomColor: '#f4f4f5',
+        backgroundColor: '#fff',
+        zIndex: 999, // Ekstremalnie wysoki zIndex
+        elevation: 10,
+    },
+    backBtn: { padding: 10, backgroundColor: '#f4f4f5', borderRadius: 12 },
+    headerInfo: { flex: 1, marginLeft: 12 },
+    headerActions: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 12
+    },
+    actionBtn: {
+        padding: 10,
+        backgroundColor: '#f4f4f5',
+        borderRadius: 12,
+        justifyContent: 'center',
+        alignItems: 'center'
+    },
     missionBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 2 },
     missionText: { fontSize: 8, fontWeight: '900', color: '#a855f7', letterSpacing: 1 },
-    title: { fontSize: 18, fontWeight: 'bold', color: '#18181b' },
+    title: { fontSize: 15, fontWeight: 'bold', color: '#18181b', maxWidth: 100 },
     aiBtn: { backgroundColor: '#18181b', padding: 10, borderRadius: 12 },
     mapContainer: { height: 300, width: '100%', backgroundColor: '#f4f4f5' },
     map: { flex: 1 },
     content: { padding: 24 },
     sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 20 },
     sectionTitle: { fontSize: 10, fontWeight: '900', color: '#71717a', letterSpacing: 2 },
-    wpCard: { flexDirection: 'row', marginBottom: 12 }, // Usunięto minHeight
+    wpCard: { flexDirection: 'row', marginBottom: 4 },
     wpVisited: { opacity: 0.6 },
     wpNumberContainer: { alignItems: 'center', width: 40 },
     checkCircle: { width: 32, height: 32, borderRadius: 16, backgroundColor: '#f4f4f5', justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: '#e4e4e7' },
     checkActive: { backgroundColor: '#10b981', borderColor: '#10b981' },
     wpIndex: { fontSize: 12, fontWeight: 'bold', color: '#71717a' },
     line: { width: 2, flex: 1, backgroundColor: '#f4f4f5', marginVertical: 4 },
-    wpContent: { flex: 1, marginLeft: 12 },
+    wpContent: { flex: 1, marginLeft: 12, paddingBottom: 24 },
     wpHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
     wpName: { fontSize: 16, fontWeight: 'bold', color: '#18181b', flex: 1 },
-    deleteBtn: { padding: 4 },
+    deleteAction: { padding: 4 },
     textStrikethrough: { textDecorationLine: 'line-through', color: '#a1a1aa' },
-    wpAddress: { fontSize: 10, fontWeight: 'bold', color: '#a855f7', textTransform: 'uppercase', marginBottom: 4 },
-
+    wpAddress: { fontSize: 10, fontWeight: 'bold', color: '#a855f7', textTransform: 'uppercase', marginVertical: 4 },
     descriptionContainer: { marginTop: 2 },
     wpDescShort: { fontSize: 13, color: '#71717a', lineHeight: 18 },
     wpDescFull: { fontSize: 13, color: '#3f3f46', lineHeight: 20 },

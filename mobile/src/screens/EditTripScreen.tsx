@@ -1,19 +1,20 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
     StyleSheet, Text, View, TextInput, ScrollView,
     TouchableOpacity, SafeAreaView, ActivityIndicator, Alert,
     KeyboardAvoidingView, Platform
 } from 'react-native';
 import {
-    ChevronLeft, Send, Sparkles, Minus, Plus,
+    ChevronLeft, Save, Sparkles, Minus, Plus,
     Calendar as CalendarIcon, MapPin, Flag, MessageSquare, Activity, Route, Clock, Banknote
 } from 'lucide-react-native';
-import api from '../api/axiosInstance';
-// IMPORT BIBLIOTEKI KALENDARZA
+import { tripsService } from '../api/tripsService';
 import DateTimePickerModal from "react-native-modal-datetime-picker";
 
-export default function AddTripScreen({ navigation }: any) {
-    const [loading, setLoading] = useState(false);
+export default function EditTripScreen({ route, navigation }: any) {
+    const { id } = route.params;
+    const [loading, setLoading] = useState(true);
+    const [saving, setSaving] = useState(false);
 
     // Sterowanie widocznością kalendarzy
     const [isStartPickerVisible, setStartPickerVisibility] = useState(false);
@@ -34,16 +35,43 @@ export default function AddTripScreen({ navigation }: any) {
         }
     });
 
-    // Funkcje obsługi daty
+    useEffect(() => {
+        const fetchTrip = async () => {
+            try {
+                const res = await tripsService.getTripDetails(id);
+                const trip = res.data || res;
+
+                // Formatowanie dat (wycinamy czas, zostawiamy YYYY-MM-DD)
+                const start = trip.startDate ? trip.startDate.split('T')[0] : '';
+                const end = trip.endDate ? trip.endDate.split('T')[0] : '';
+
+                setFormData({
+                    title: trip.title,
+                    origin: { address: trip.origin?.address || '' },
+                    destination: { address: trip.destination?.address || '' },
+                    startDate: start,
+                    endDate: end,
+                    budget: String(trip.budget || ''),
+                    description: trip.description || '',
+                    aiSettings: trip.aiSettings || { intensity: 5, discoverySpread: 5, numberOfPoints: 10 }
+                });
+            } catch (err) {
+                Alert.alert("Error", "Failed to fetch trip data.");
+                navigation.goBack();
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchTrip();
+    }, [id]);
+
     const handleConfirmStart = (date: Date) => {
-        const formatted = date.toISOString().split('T')[0];
-        setFormData({ ...formData, startDate: formatted });
+        setFormData({ ...formData, startDate: date.toISOString().split('T')[0] });
         setStartPickerVisibility(false);
     };
 
     const handleConfirmEnd = (date: Date) => {
-        const formatted = date.toISOString().split('T')[0];
-        setFormData({ ...formData, endDate: formatted });
+        setFormData({ ...formData, endDate: date.toISOString().split('T')[0] });
         setEndPickerVisibility(false);
     };
 
@@ -57,24 +85,24 @@ export default function AddTripScreen({ navigation }: any) {
         }));
     };
 
-    const handleSubmit = async () => {
-        if (!formData.title || !formData.origin.address || !formData.destination.address) {
-            Alert.alert("Requirement check failed", "Please specify mission title, origin and destination.");
-            return;
-        }
-
-        setLoading(true);
+    const handleSave = async () => {
+        setSaving(true);
         try {
             const payload = { ...formData, budget: Number(formData.budget) || 0 };
-            await api.post('/trips', payload);
-            Alert.alert("Success", "Mission Initialized");
-            navigation.navigate('Home');
-        } catch (err: any) {
-            Alert.alert("Error", err.response?.data?.message || "Failed to deploy mission.");
+            await tripsService.updateTrip(id, payload);
+            Alert.alert("Success", "Mission Parameters Updated", [
+                { text: "OK", onPress: () => navigation.goBack() }
+            ]);
+        } catch (err) {
+            Alert.alert("Error", "Update failed.");
         } finally {
-            setLoading(false);
+            setSaving(false);
         }
     };
+
+    if (loading) return (
+        <View style={styles.centered}><ActivityIndicator color="#18181b" size="large" /></View>
+    );
 
     return (
         <SafeAreaView style={styles.container}>
@@ -83,14 +111,18 @@ export default function AddTripScreen({ navigation }: any) {
                     <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
                         <ChevronLeft color="#18181b" size={24} />
                     </TouchableOpacity>
-                    <Text style={styles.headerTitle}>Voyager Mission Deployment</Text>
+                    <Text style={styles.headerTitle}>Edit Mission Config</Text>
                     <View style={{ width: 40 }} />
                 </View>
 
-                <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+                <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
                     <View style={styles.section}>
                         <Text style={styles.label}>Trip Title</Text>
-                        <TextInput style={styles.input} placeholder="np. Roadtrip przez Polskę" placeholderTextColor="#a1a1aa" value={formData.title} onChangeText={(txt) => setFormData({...formData, title: txt})} />
+                        <TextInput
+                            style={styles.input}
+                            value={formData.title}
+                            onChangeText={(txt) => setFormData({...formData, title: txt})}
+                        />
                     </View>
 
                     <View style={styles.row}>
@@ -98,41 +130,43 @@ export default function AddTripScreen({ navigation }: any) {
                             <Text style={styles.label}>Starting Point</Text>
                             <View style={styles.inputWithIcon}>
                                 <MapPin size={18} color="#a1a1aa" style={{marginRight: 10}} />
-                                <TextInput style={styles.flexInput} placeholder="Start City" placeholderTextColor="#a1a1aa" value={formData.origin.address} onChangeText={(txt) => setFormData({...formData, origin: { address: txt }})} />
+                                <TextInput
+                                    style={styles.flexInput}
+                                    value={formData.origin.address}
+                                    onChangeText={(txt) => setFormData({...formData, origin: { address: txt }})}
+                                />
                             </View>
                         </View>
                         <View style={[styles.section, { flex: 1 }]}>
                             <Text style={styles.label}>Destination</Text>
                             <View style={styles.inputWithIcon}>
                                 <Flag size={18} color="#a1a1aa" style={{marginRight: 10}} />
-                                <TextInput style={styles.flexInput} placeholder="End City" placeholderTextColor="#a1a1aa" value={formData.destination.address} onChangeText={(txt) => setFormData({...formData, destination: { address: txt }})} />
+                                <TextInput
+                                    style={styles.flexInput}
+                                    value={formData.destination.address}
+                                    onChangeText={(txt) => setFormData({...formData, destination: { address: txt }})}
+                                />
                             </View>
                         </View>
                     </View>
 
-                    {/* SEKCJA DAT Z MODALEM */}
                     <View style={styles.row}>
                         <View style={[styles.section, { flex: 1, marginRight: 12 }]}>
                             <Text style={styles.label}>Launch Date</Text>
                             <TouchableOpacity style={styles.inputWithIcon} onPress={() => setStartPickerVisibility(true)}>
                                 <CalendarIcon size={18} color="#a1a1aa" style={{marginRight: 10}} />
-                                <Text style={[styles.flexInput, !formData.startDate && {color: '#a1a1aa'}]}>
-                                    {formData.startDate || "Wybierz date"}
-                                </Text>
+                                <Text style={styles.flexInput}>{formData.startDate || "Select date"}</Text>
                             </TouchableOpacity>
                         </View>
                         <View style={[styles.section, { flex: 1 }]}>
                             <Text style={styles.label}>Return Date</Text>
                             <TouchableOpacity style={styles.inputWithIcon} onPress={() => setEndPickerVisibility(true)}>
                                 <CalendarIcon size={18} color="#a1a1aa" style={{marginRight: 10}} />
-                                <Text style={[styles.flexInput, !formData.endDate && {color: '#a1a1aa'}]}>
-                                    {formData.endDate || "Wybierz date"}
-                                </Text>
+                                <Text style={styles.flexInput}>{formData.endDate || "Select date"}</Text>
                             </TouchableOpacity>
                         </View>
                     </View>
 
-                    {/* MODALE KALENDARZA */}
                     <DateTimePickerModal
                         isVisible={isStartPickerVisible}
                         mode="date"
@@ -147,13 +181,19 @@ export default function AddTripScreen({ navigation }: any) {
                     />
 
                     <View style={styles.section}>
-                        <Text style={styles.label}>Special Requirements / AI Instructions</Text>
+                        <Text style={styles.label}>Special Requirements</Text>
                         <View style={[styles.inputWithIcon, { alignItems: 'flex-start', paddingTop: 14 }]}>
                             <MessageSquare size={18} color="#a1a1aa" style={{marginRight: 10, marginTop: 2}} />
-                            <TextInput style={[styles.flexInput, { minHeight: 100, textAlignVertical: 'top' }]} placeholder="Np. Chcę omijać autostrady..." placeholderTextColor="#a1a1aa" multiline={true} value={formData.description} onChangeText={(txt) => setFormData({...formData, description: txt})} />
+                            <TextInput
+                                style={[styles.flexInput, { minHeight: 80, textAlignVertical: 'top' }]}
+                                multiline={true}
+                                value={formData.description}
+                                onChangeText={(txt) => setFormData({...formData, description: txt})}
+                            />
                         </View>
                     </View>
 
+                    {/* AI CARD - Identyczna jak w AddTripScreen */}
                     <View style={styles.aiCard}>
                         <View style={styles.aiHeaderRow}>
                             <Sparkles size={16} color="#fbbf24" />
@@ -194,7 +234,7 @@ export default function AddTripScreen({ navigation }: any) {
                                     <Clock size={12} color="#71717a" />
                                     <Text style={styles.settingTitle}>Liczba Punktów</Text>
                                 </View>
-                                <Text style={styles.settingSub}>{formData.aiSettings.numberOfPoints} stops (max 20)</Text>
+                                <Text style={styles.settingSub}>{formData.aiSettings.numberOfPoints} stops</Text>
                             </View>
                             <View style={styles.stepper}>
                                 <TouchableOpacity onPress={() => updateAiSetting('numberOfPoints', -1, 1, 20)} style={styles.stepBtn}><Minus size={16} color="#fff" /></TouchableOpacity>
@@ -209,33 +249,34 @@ export default function AddTripScreen({ navigation }: any) {
                                 <Banknote size={12} color="#71717a" />
                                 <Text style={[styles.label, {color: '#71717a', marginBottom: 0}]}>Budżet (PLN)</Text>
                             </View>
-                            <TextInput keyboardType="numeric" style={styles.aiInput} placeholder="Np. 2000" placeholderTextColor="#52525b" value={formData.budget.toString()} onChangeText={(v) => setFormData({...formData, budget: v})} />
+                            <TextInput
+                                keyboardType="numeric"
+                                style={styles.aiInput}
+                                value={formData.budget}
+                                onChangeText={(v) => setFormData({...formData, budget: v})}
+                            />
                         </View>
                     </View>
 
-                    <TouchableOpacity style={[styles.submitButton, loading && {opacity: 0.7}]} onPress={handleSubmit} disabled={loading}>
-                        {loading ? <ActivityIndicator color="#fff" /> : (
-                            <><Text style={styles.submitText}>INITIALIZE AI TRAJECTORY</Text><Send size={18} color="#fff" /></>
+                    <TouchableOpacity style={[styles.submitButton, saving && {opacity: 0.7}]} onPress={handleSave} disabled={saving}>
+                        {saving ? <ActivityIndicator color="#fff" /> : (
+                            <><Text style={styles.submitText}>SAVE CHANGES</Text><Save size={18} color="#fff" /></>
                         )}
                     </TouchableOpacity>
-                    <View style={{ height: 350 }} />
+                    <View style={{ height: 50 }} />
                 </ScrollView>
             </KeyboardAvoidingView>
         </SafeAreaView>
     );
 }
 
+// STYLE - Skopiowane z Twojego AddTripScreen dla 100% spójności
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: '#fff' },
+    centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
     header: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        paddingHorizontal: 16,
-        paddingBottom: 12, // Zmienione z paddingVertical na bottom/top
-        borderBottomWidth: 1,
-        borderBottomColor: '#f4f4f5',
-        // Obniżenie ikon zgodnie z Twoim schematem:
+        flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+        paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#f4f4f5',
         paddingTop: Platform.OS === 'android' ? 45 : 12
     },
     backBtn: { padding: 8, backgroundColor: '#f4f4f5', borderRadius: 12 },
@@ -257,6 +298,6 @@ const styles = StyleSheet.create({
     stepBtn: { backgroundColor: '#27272a', width: 40, height: 40, borderRadius: 14, justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: '#3f3f46' },
     divider: { height: 1, backgroundColor: '#27272a', marginVertical: 10, marginBottom: 20 },
     aiInput: { backgroundColor: '#27272a', borderRadius: 14, padding: 16, color: '#fff', fontWeight: 'bold', fontSize: 16, borderWidth: 1, borderColor: '#3f3f46' },
-    submitButton: { backgroundColor: '#18181b', borderRadius: 24, padding: 22, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 12, shadowColor: '#000', shadowOffset: { width: 0, height: 5 }, shadowOpacity: 0.2, shadowRadius: 10 },
+    submitButton: { backgroundColor: '#18181b', borderRadius: 24, padding: 22, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 12 },
     submitText: { color: '#fff', fontWeight: '900', fontSize: 13, letterSpacing: 2 }
 });

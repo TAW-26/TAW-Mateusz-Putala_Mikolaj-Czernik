@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
     StyleSheet, Text, View, ScrollView, TextInput,
-    TouchableOpacity, ActivityIndicator, SafeAreaView, Alert
+    TouchableOpacity, ActivityIndicator, SafeAreaView, Alert, Platform // Dodano Platform
 } from 'react-native';
 import { User, Lock, ShieldCheck, Save, ChevronLeft } from 'lucide-react-native';
 import { userService } from '../api/userService';
@@ -13,13 +13,11 @@ export default function ProfileScreen({ navigation }: any) {
     const [passwords, setPasswords] = useState({ oldPassword: '', newPassword: '', confirmPassword: '' });
     const [loading, setLoading] = useState(false);
 
-    // Aktualizacja danych podstawowych
     const handleUpdateInfo = async () => {
         if (!info.username || !info.email) return Alert.alert("Error", "Fill all fields.");
         setLoading(true);
         try {
             await userService.updateProfile(info);
-            // Aktualizujemy globalny stan authStore, żeby Dashboard też widział zmianę
             setAuth({ ...user, ...info }, useAuthStore.getState().token || '');
             Alert.alert("Success", "Profile updated successfully.");
         } catch (err: any) {
@@ -27,7 +25,6 @@ export default function ProfileScreen({ navigation }: any) {
         } finally { setLoading(false); }
     };
 
-    // Zmiana hasła
     const handleChangePass = async () => {
         if (passwords.newPassword !== passwords.confirmPassword) {
             return Alert.alert("Error", "New passwords do not match.");
@@ -58,7 +55,6 @@ export default function ProfileScreen({ navigation }: any) {
             </View>
 
             <ScrollView contentContainerStyle={styles.scrollContent}>
-                {/* Podstawowe info */}
                 <View style={styles.card}>
                     <View style={styles.cardHeader}>
                         <User size={20} color="#6366f1" />
@@ -89,7 +85,6 @@ export default function ProfileScreen({ navigation }: any) {
                     </TouchableOpacity>
                 </View>
 
-                {/* Bezpieczeństwo */}
                 <View style={styles.card}>
                     <View style={styles.cardHeader}>
                         <Lock size={20} color="#f43f5e" />
@@ -130,7 +125,15 @@ export default function ProfileScreen({ navigation }: any) {
 
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: '#fcfcfc' },
-    header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 20 },
+    header: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingHorizontal: 20,
+        paddingBottom: 20,
+        // Obniżenie ikon zgodnie z Twoim schematem:
+        paddingTop: Platform.OS === 'android' ? 45 : 10
+    },
     backBtn: { padding: 8, backgroundColor: '#f4f4f5', borderRadius: 12 },
     headerTitle: { fontSize: 20, fontWeight: 'bold', color: '#18181b' },
     headerIcon: { padding: 8, backgroundColor: '#eef2ff', borderRadius: 12 },

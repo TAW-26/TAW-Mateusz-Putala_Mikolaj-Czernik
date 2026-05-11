@@ -6,7 +6,8 @@ import LoginScreen from './src/screens/LoginScreen';
 import HomeScreen from './src/screens/HomeScreen';
 import AddTripScreen from './src/screens/AddTripScreen';
 import TripDetailsScreen from './src/screens/TripDetailsScreen';
-import ProfileScreen from './src/screens/ProfileScreen';// 1. Importujemy nowy ekran
+import ProfileScreen from './src/screens/ProfileScreen';
+import EditTripScreen from "./src/screens/EditTripScreen";
 
 const Stack = createNativeStackNavigator();
 
@@ -23,6 +24,7 @@ export default function App() {
                         <Stack.Screen name="AddTrip" component={AddTripScreen} />
                         <Stack.Screen name="TripDetails" component={TripDetailsScreen} />
                         <Stack.Screen name="Profile" component={ProfileScreen} options={{ headerShown: false }} />
+                        <Stack.Screen name="EditTrip" component={EditTripScreen} options={{ headerShown: false }} />
                     </>
                 ) : (
                     // Grupa ekranów dla niezalogowanych

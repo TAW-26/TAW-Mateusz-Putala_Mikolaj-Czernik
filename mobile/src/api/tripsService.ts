@@ -21,19 +21,49 @@ export interface Trip {
 }
 
 export const tripsService = {
-    // POBIERANIE SZCZEGÓŁÓW
-    getTripDetails: (id: string) =>
-        api.get<{ data: Trip }>(`/trips/${id}`).then(res => res.data),
+    // Pobieranie wszystkich wycieczek
+    getTrips: async () => {
+        const response = await api.get('/trips');
+        return response.data;
+    },
 
-    // GENEROWANIE AI
-    generateAIWaypoints: (id: string) =>
-        api.post(`/trips/${id}/generate`),
+    // Detale konkretnej wycieczki
+    getTripDetails: async (id: string) => {
+        const response = await api.get(`/trips/${id}`);
+        return response.data;
+    },
 
-    // AKTUALIZACJA PUNKTU (np. odwiedzone)
-    updateWaypoint: (id: string, data: Partial<Waypoint>) =>
-        api.put(`/trips/waypoints/${id}`, data),
+    // --- TO BYŁO BRAKUJĄCE OGNIWO ---
+    // Aktualizacja wycieczki (np. ulubione, zmiana tytułu, zmiana parametrów)
+    updateTrip: async (id: string, data: any) => {
+        const response = await api.patch(`/trips/${id}`, data);
+        return response.data;
+    },
 
-    // USUWANIE PUNKTU
-    deleteWaypoint: (id: string) =>
-        api.delete(`/trips/waypoints/${id}`),
+    // Usuwanie wycieczki
+    deleteTrip: async (id: string) => {
+        const response = await api.delete(`/trips/${id}`);
+        return response.data;
+    },
+
+    // Generowanie nowych punktów przez AI
+    generateAIWaypoints: async (tripId: string) => {
+        const response = await api.post(`/trips/${tripId}/generate-waypoints`);
+        return response.data;
+    },
+
+    // Aktualizacja konkretnego punktu (np. oznaczenie jako odwiedzony)
+    updateWaypoint: async (wpId: string, data: any) => {
+        const response = await api.patch(`/waypoints/${wpId}`, data);
+        return response.data;
+    },
+
+    // Usuwanie konkretnego punktu z wycieczki
+    deleteWaypoint: async (wpId: string) => {
+        const response = await api.delete(`/waypoints/${wpId}`);
+        return response.data;
+    }
 };
+
+
+
