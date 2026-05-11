@@ -9,7 +9,7 @@ import {
     SafeAreaView,
     Alert
 } from 'react-native';
-import { Compass, Activity, LogOut, MapPin, Plus } from 'lucide-react-native';
+import { Compass, Activity, LogOut, MapPin, Plus, User } from 'lucide-react-native'; // DODANO: User
 import api from '../api/axiosInstance';
 import { useAuthStore } from '../store/authStore';
 import { useFocusEffect } from '@react-navigation/native'; // DODANO: hook do odświeżania
@@ -29,8 +29,6 @@ export default function HomeScreen({ navigation }: any) {
     const logout = useAuthStore((state) => state.logout);
 
     const loadTrips = async () => {
-        // Przy odświeżaniu w tle nie zawsze chcemy pokazywać duży ActivityIndicator,
-        // ale przy pierwszym ładowaniu jest on wskazany.
         try {
             const res = await api.get('/trips');
             const data = res.data.data || res.data || [];
@@ -45,7 +43,6 @@ export default function HomeScreen({ navigation }: any) {
         }
     };
 
-    // Automatyczne odświeżanie listy przy każdym powrocie na ekran Home
     useFocusEffect(
         useCallback(() => {
             loadTrips();
@@ -70,13 +67,24 @@ export default function HomeScreen({ navigation }: any) {
                         <Text style={styles.title}>Your Journeys</Text>
                     </View>
 
-                    <TouchableOpacity
-                        onPress={handleLogout}
-                        style={styles.logoutBtn}
-                        activeOpacity={0.7}
-                    >
-                        <LogOut size={22} color="#ef4444" />
-                    </TouchableOpacity>
+                    {/* Przyciski akcji w nagłówku */}
+                    <View style={styles.headerActions}>
+                        <TouchableOpacity
+                            onPress={() => navigation.navigate('Profile')}
+                            style={styles.profileBtn}
+                            activeOpacity={0.7}
+                        >
+                            <User size={22} color="#4f46e5" />
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                            onPress={handleLogout}
+                            style={styles.logoutBtn}
+                            activeOpacity={0.7}
+                        >
+                            <LogOut size={22} color="#ef4444" />
+                        </TouchableOpacity>
+                    </View>
                 </View>
 
                 {/* Statystyka wycieczek */}
@@ -112,7 +120,7 @@ export default function HomeScreen({ navigation }: any) {
                             key={trip._id}
                             style={styles.tripCard}
                             activeOpacity={0.8}
-                            onPress={() => navigation.navigate('TripDetails', { id: trip._id })} // NAWIGACJA DO SZCZEGÓŁÓW
+                            onPress={() => navigation.navigate('TripDetails', { id: trip._id })}
                         >
                             <View style={styles.tripHeader}>
                                 <Text style={styles.tripTitle}>{trip.title}</Text>
@@ -147,9 +155,20 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         marginBottom: 32
     },
+    headerActions: {
+        flexDirection: 'row',
+        gap: 12
+    },
     badgeRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 4 },
     badge: { fontSize: 10, fontWeight: '900', color: '#a1a1aa', letterSpacing: 2 },
     title: { fontSize: 32, fontWeight: 'bold', color: '#18181b', letterSpacing: -1 },
+    profileBtn: {
+        padding: 10,
+        backgroundColor: '#eef2ff',
+        borderRadius: 14,
+        justifyContent: 'center',
+        alignItems: 'center'
+    },
     logoutBtn: {
         padding: 10,
         backgroundColor: '#fef2f2',
