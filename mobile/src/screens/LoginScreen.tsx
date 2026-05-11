@@ -13,7 +13,7 @@ import {
 import { useAuthStore } from '../store/authStore';
 import api from '../api/axiosInstance';
 
-export default function LoginScreen() {
+export default function LoginScreen({ navigation }: any) { // DODANO { navigation }
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
@@ -107,7 +107,10 @@ export default function LoginScreen() {
                     </TouchableOpacity>
                 </View>
 
-                <TouchableOpacity style={styles.registerLink}>
+                <TouchableOpacity
+                    style={styles.registerLink}
+                    onPress={() => navigation.navigate('Register')}
+                >
                     <Text style={styles.registerText}>
                         Don't have an account? <Text style={styles.boldText}>Register here</Text>
                     </Text>
