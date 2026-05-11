@@ -232,11 +232,12 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         alignItems: 'center',
         paddingHorizontal: 16,
-        paddingBottom: 12, // Zmienione z paddingVertical na bottom/top
+        paddingBottom: 12, // Zachowujemy oryginalny paddingVertical
+        // ANALOGICZNE OBNIŻENIE DLA IKON:
+        paddingTop: Platform.OS === 'android' ? 45 : 20,
         borderBottomWidth: 1,
         borderBottomColor: '#f4f4f5',
-        // Obniżenie ikon zgodnie z Twoim schematem:
-        paddingTop: Platform.OS === 'android' ? 45 : 12
+        backgroundColor: '#fff'
     },
     backBtn: { padding: 8, backgroundColor: '#f4f4f5', borderRadius: 12 },
     headerTitle: { fontSize: 16, fontWeight: '800', color: '#18181b', letterSpacing: -0.5 },
