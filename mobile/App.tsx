@@ -8,6 +8,8 @@ import AddTripScreen from './src/screens/AddTripScreen';
 import TripDetailsScreen from './src/screens/TripDetailsScreen';
 import ProfileScreen from './src/screens/ProfileScreen';
 import EditTripScreen from "./src/screens/EditTripScreen";
+import SettingsScreen from "./src/screens/SettingsScreen";
+import UserPreferencesScreen from "./src/screens/UserPreferencesScreen";
 
 const Stack = createNativeStackNavigator();
 
@@ -18,16 +20,16 @@ export default function App() {
         <NavigationContainer>
             <Stack.Navigator screenOptions={{ headerShown: false }}>
                 {token ? (
-                    // Grupa ekranów dostępnych po zalogowaniu
                     <>
                         <Stack.Screen name="Home" component={HomeScreen} />
                         <Stack.Screen name="AddTrip" component={AddTripScreen} />
                         <Stack.Screen name="TripDetails" component={TripDetailsScreen} />
-                        <Stack.Screen name="Profile" component={ProfileScreen} options={{ headerShown: false }} />
-                        <Stack.Screen name="EditTrip" component={EditTripScreen} options={{ headerShown: false }} />
+                        <Stack.Screen name="Profile" component={ProfileScreen} />
+                        <Stack.Screen name="EditTrip" component={EditTripScreen} />
+                        <Stack.Screen name="Settings" component={SettingsScreen} />
+                        <Stack.Screen name="UserPreferences" component={UserPreferencesScreen} />
                     </>
                 ) : (
-                    // Grupa ekranów dla niezalogowanych
                     <Stack.Screen name="Login" component={LoginScreen} />
                 )}
             </Stack.Navigator>

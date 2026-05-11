@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import {
     StyleSheet, Text, View, ScrollView, TextInput,
-    TouchableOpacity, ActivityIndicator, SafeAreaView, Alert, Platform // Dodano Platform
+    TouchableOpacity, ActivityIndicator, SafeAreaView, Alert, Platform
 } from 'react-native';
-import { User, Lock, ShieldCheck, Save, ChevronLeft } from 'lucide-react-native';
+import { User, Lock, ShieldCheck, Save, ChevronLeft, Settings, ChevronRight, Sparkles } from 'lucide-react-native';
 import { userService } from '../api/userService';
 import { useAuthStore } from '../store/authStore';
 
@@ -54,7 +54,11 @@ export default function ProfileScreen({ navigation }: any) {
                 </View>
             </View>
 
-            <ScrollView contentContainerStyle={styles.scrollContent}>
+            <ScrollView
+                contentContainerStyle={styles.scrollContent}
+                showsVerticalScrollIndicator={false}
+            >
+                {/* Podstawowe info */}
                 <View style={styles.card}>
                     <View style={styles.cardHeader}>
                         <User size={20} color="#6366f1" />
@@ -85,6 +89,41 @@ export default function ProfileScreen({ navigation }: any) {
                     </TouchableOpacity>
                 </View>
 
+                {/* PRZYCISK 1: AI Neural Protocol */}
+                <TouchableOpacity
+                    style={styles.settingsLinkCard}
+                    onPress={() => navigation.navigate('UserPreferences')}
+                >
+                    <View style={styles.settingsLinkLeft}>
+                        <View style={[styles.settingsIconBox, { backgroundColor: '#eef2ff' }]}>
+                            <Sparkles size={20} color="#6366f1" />
+                        </View>
+                        <View>
+                            <Text style={styles.settingsLinkTitle}>AI Neural Protocol</Text>
+                            <Text style={styles.settingsLinkSub}>Interests, Travel Style & Traits</Text>
+                        </View>
+                    </View>
+                    <ChevronRight size={18} color="#a1a1aa" />
+                </TouchableOpacity>
+
+                {/* PRZYCISK 2: App Settings (Zmieniona nazwa) */}
+                <TouchableOpacity
+                    style={styles.settingsLinkCard}
+                    onPress={() => navigation.navigate('Settings')}
+                >
+                    <View style={styles.settingsLinkLeft}>
+                        <View style={styles.settingsIconBox}>
+                            <Settings size={20} color="#18181b" />
+                        </View>
+                        <View>
+                            <Text style={styles.settingsLinkTitle}>App Settings</Text>
+                            <Text style={styles.settingsLinkSub}>Language, Theme & System</Text>
+                        </View>
+                    </View>
+                    <ChevronRight size={18} color="#a1a1aa" />
+                </TouchableOpacity>
+
+                {/* Bezpieczeństwo */}
                 <View style={styles.card}>
                     <View style={styles.cardHeader}>
                         <Lock size={20} color="#f43f5e" />
@@ -118,6 +157,9 @@ export default function ProfileScreen({ navigation }: any) {
                         <Text style={styles.passBtnText}>Update Password</Text>
                     </TouchableOpacity>
                 </View>
+
+                {/* Dystans dla klawiatury */}
+                <View style={{ height: 250 }} />
             </ScrollView>
         </SafeAreaView>
     );
@@ -131,7 +173,6 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         paddingHorizontal: 20,
         paddingBottom: 20,
-        // Obniżenie ikon zgodnie z Twoim schematem:
         paddingTop: Platform.OS === 'android' ? 45 : 10
     },
     backBtn: { padding: 8, backgroundColor: '#f4f4f5', borderRadius: 12 },
@@ -145,6 +186,21 @@ const styles = StyleSheet.create({
     input: { backgroundColor: '#f9fafb', borderWidth: 1, borderColor: '#f3f4f6', borderRadius: 14, padding: 12, marginBottom: 16, fontSize: 15, color: '#18181b' },
     saveBtn: { backgroundColor: '#4f46e5', flexDirection: 'row', justifyContent: 'center', alignItems: 'center', padding: 16, borderRadius: 14, gap: 8 },
     saveBtnText: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
+    settingsLinkCard: {
+        backgroundColor: '#fff',
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        padding: 16,
+        borderRadius: 24,
+        marginBottom: 12,
+        borderWidth: 1,
+        borderColor: '#f4f4f5'
+    },
+    settingsLinkLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+    settingsIconBox: { backgroundColor: '#f4f4f5', padding: 10, borderRadius: 12 },
+    settingsLinkTitle: { fontSize: 15, fontWeight: 'bold', color: '#18181b' },
+    settingsLinkSub: { fontSize: 12, color: '#a1a1aa' },
     passBtn: { backgroundColor: '#18181b', padding: 16, borderRadius: 14, alignItems: 'center' },
     passBtnText: { color: '#fff', fontWeight: 'bold' },
     divider: { height: 1, backgroundColor: '#f3f4f6', marginBottom: 16 }
