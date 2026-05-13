@@ -1,8 +1,24 @@
 const Groq = require("groq-sdk");
-const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+
+// Ta zmienna będzie przechowywać klienta
+let client = null;
+
+// Ta funkcja pozwala testom "wstrzyknąć" udawanego klienta
+exports.setClient = (mockClient) => {
+    client = mockClient;
+};
+
+const getClient = () => {
+    if (!client) {
+        client = new Groq({ apiKey: process.env.GROQ_API_KEY });
+    }
+    return client;
+};
 
 exports.generateWaypoints = async (trip, user) => {
     try {
+        const groq = getClient();
+        console.log(`[Groq AI] Generowanie trasy: ${trip.origin.address} -> ${trip.destination.address}`);
         console.log(`[Groq AI] Generowanie trasy: ${trip.origin.address} -> ${trip.destination.address}`);
 
         const interests = user.preferences?.interests?.join(', ') || 'ogólne zwiedzanie';
