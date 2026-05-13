@@ -11,7 +11,7 @@ const { errorHandler } = require('./middleware/errorMiddleware');
 // Konfiguracja środowiska i bazy danych
 // Upewnij się, że plik .env jest w folderze głównym backend/
 dotenv.config();
-connectDB();
+//connectDB();
 
 const app = express();
 
@@ -42,9 +42,14 @@ app.get('/', (req, res) => {
 app.use(errorHandler);
 
 // Uruchomienie serwera
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-    console.log(`🌍 Serwer śmiga na porcie ${PORT}`);
-});
+if (process.env.NODE_ENV !== 'test') {
+    connectDB(); // Łączymy z prawdziwą bazą TYLKO jeśli to nie testy
+    const PORT = process.env.PORT || 5000;
+    app.listen(PORT, () => {
+        console.log(`🌍 Serwer śmiga na porcie ${PORT}`);
+    });
+}
+
+module.exports = app;
 
 

@@ -13,4 +13,4 @@ const waypointSchema = new mongoose.Schema({
     visited: { type: Boolean, default: false }
 });
 
-module.exports = mongoose.model('Waypoint', waypointSchema);
+module.exports = mongoose.models.Waypoint || mongoose.model('Waypoint', waypointSchema);
