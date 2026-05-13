@@ -89,4 +89,4 @@ tripSchema.virtual('waypoints', {
     foreignField: 'trip'
 });
 
-module.exports = mongoose.model('Trip', tripSchema);
+module.exports = mongoose.models.Trip || mongoose.model('Trip', tripSchema);
