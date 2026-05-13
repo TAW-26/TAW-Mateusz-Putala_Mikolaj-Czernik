@@ -1,109 +1,55 @@
 const tripService = require('../services/tripService');
-const Trip = require('../models/Trip');
-const Waypoint = require('../models/Waypoint');
 
-// @desc    Utwórz nową wycieczkę (A -> B) - obsługuje aiSettings z automatu
 exports.createTrip = async (req, res) => {
     try {
-        const trip = await Trip.create({
-            ...req.body,
-            user: req.user.id
-        });
+        const trip = await tripService.createSmartTrip(req.body, req.user.id);
         res.status(201).json({ success: true, data: trip });
     } catch (err) {
         res.status(400).json({ success: false, error: err.message });
     }
 };
 
-// @desc    Pobierz wycieczki usera wraz z posortowanymi przystankami
 exports.getTrips = async (req, res) => {
     try {
-        const trips = await Trip.find({ user: req.user.id })
-            .populate({
-                path: 'waypoints',
-                options: { sort: { 'order_index': 1 } }
-            })
-            .sort('-createdAt');
+        const trips = await tripService.getUserTrips(req.user.id);
         res.status(200).json({ success: true, count: trips.length, data: trips });
     } catch (err) {
-        res.status(500).json({ success: false, error: 'Błąd serwera' });
+        res.status(500).json({ success: false, error: err.message });
     }
 };
 
-// @desc    Pobierz pojedynczą wycieczkę (szczegóły trasy A -> B)
 exports.getTrip = async (req, res) => {
     try {
-        const trip = await Trip.findById(req.params.id).populate({
-            path: 'waypoints',
-            options: { sort: { 'order_index': 1 } }
-        });
-
-        if (!trip) return res.status(404).json({ message: 'Nie znaleziono wycieczki' });
-
-        if (trip.user.toString() !== req.user.id && req.user.role !== 'admin') {
-            return res.status(401).json({ message: 'Brak uprawnień' });
-        }
-
+        const trip = await tripService.getSingleTrip(req.params.id, req.user);
         res.status(200).json({ success: true, data: trip });
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        res.status(err.message === 'Brak uprawnień' ? 401 : 404).json({ message: err.message });
     }
 };
 
-// @desc    Aktualizuj wycieczkę (w tym suwaki aiSettings)
 exports.updateTrip = async (req, res) => {
     try {
-        let trip = await Trip.findById(req.params.id);
-
-        if (!trip) return res.status(404).json({ message: 'Nie znaleziono wycieczki' });
-
-        // Weryfikacja uprawnień
-        if (trip.user.toString() !== req.user.id && req.user.role !== 'admin') {
-            return res.status(401).json({ message: 'Brak uprawnień' });
-        }
-
-        trip = await Trip.findByIdAndUpdate(req.params.id, req.body, {
-            new: true,
-            runValidators: true
-        });
-
+        const trip = await tripService.updateTripData(req.params.id, req.body, req.user);
         res.status(200).json({ success: true, data: trip });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
 };
 
-// @desc    Usuń wycieczkę (KASKADOWO: usuwa też wszystkie waypointy tej wycieczki)
 exports.deleteTrip = async (req, res) => {
     try {
-        const trip = await Trip.findById(req.params.id);
-        if (!trip) return res.status(404).json({ message: 'Nie znaleziono wycieczki' });
-
-        if (trip.user.toString() !== req.user.id && req.user.role !== 'admin') {
-            return res.status(401).json({ message: 'Brak uprawnień' });
-        }
-
-        // Wołamy kaskadę z serwisu
-        await tripService.deleteTripCascade(req.params.id);
-
+        await tripService.deleteTripCascade(req.params.id, req.user);
         res.status(200).json({ success: true, message: 'Usunięto pomyślnie' });
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        res.status(err.message === 'Brak uprawnień' ? 401 : 404).json({ error: err.message });
     }
 };
 
-// --- LOGIKA WAYPOINTS (PRZYSTANKÓW) ---
+// --- WAYPOINT CONTROLLERS ---
 
 exports.getWaypointsByTrip = async (req, res) => {
     try {
-        const trip = await Trip.findById(req.params.tripId);
-        if (!trip) return res.status(404).json({ message: 'Nie znaleziono wycieczki' });
-
-        if (trip.user.toString() !== req.user.id && req.user.role !== 'admin') {
-            return res.status(401).json({ message: 'Brak uprawnień' });
-        }
-
-        const waypoints = await Waypoint.find({ trip: req.params.tripId }).sort('order_index');
+        const waypoints = await tripService.getWaypointsForTrip(req.params.tripId, req.user);
         res.status(200).json({ success: true, data: waypoints });
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -112,17 +58,7 @@ exports.getWaypointsByTrip = async (req, res) => {
 
 exports.addWaypoint = async (req, res) => {
     try {
-        const trip = await Trip.findById(req.params.tripId);
-        if (!trip) return res.status(404).json({ message: 'Nie znaleziono wycieczki' });
-
-        if (trip.user.toString() !== req.user.id && req.user.role !== 'admin') {
-            return res.status(401).json({ message: 'Brak uprawnień' });
-        }
-
-        const waypoint = await Waypoint.create({
-            ...req.body,
-            trip: req.params.tripId
-        });
+        const waypoint = await tripService.addSingleWaypoint(req.params.tripId, req.body, req.user);
         res.status(201).json({ success: true, data: waypoint });
     } catch (err) {
         res.status(400).json({ error: err.message });
@@ -131,18 +67,7 @@ exports.addWaypoint = async (req, res) => {
 
 exports.updateWaypoint = async (req, res) => {
     try {
-        let waypoint = await Waypoint.findById(req.params.id).populate('trip');
-        if (!waypoint) return res.status(404).json({ message: 'Punkt nie istnieje' });
-
-        if (waypoint.trip.user.toString() !== req.user.id && req.user.role !== 'admin') {
-            return res.status(401).json({ message: 'Brak uprawnień' });
-        }
-
-        waypoint = await Waypoint.findByIdAndUpdate(req.params.id, req.body, {
-            new: true,
-            runValidators: true
-        });
-
+        const waypoint = await tripService.updateWaypointData(req.params.id, req.body, req.user);
         res.status(200).json({ success: true, data: waypoint });
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -151,14 +76,7 @@ exports.updateWaypoint = async (req, res) => {
 
 exports.deleteWaypoint = async (req, res) => {
     try {
-        const waypoint = await Waypoint.findById(req.params.id).populate('trip');
-        if (!waypoint) return res.status(404).json({ message: 'Punkt nie istnieje' });
-
-        if (waypoint.trip.user.toString() !== req.user.id && req.user.role !== 'admin') {
-            return res.status(401).json({ message: 'Brak uprawnień' });
-        }
-
-        await waypoint.deleteOne();
+        await tripService.removeWaypoint(req.params.id, req.user);
         res.status(200).json({ success: true, message: 'Punkt usunięty' });
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -167,14 +85,7 @@ exports.deleteWaypoint = async (req, res) => {
 
 exports.deleteAllWaypoints = async (req, res) => {
     try {
-        const trip = await Trip.findById(req.params.tripId);
-        if (!trip) return res.status(404).json({ message: 'Nie znaleziono wycieczki' });
-
-        if (trip.user.toString() !== req.user.id && req.user.role !== 'admin') {
-            return res.status(401).json({ message: 'Brak uprawnień' });
-        }
-
-        await Waypoint.deleteMany({ trip: req.params.tripId });
+        await tripService.removeAllWaypointsFromTrip(req.params.tripId, req.user);
 
         res.status(200).json({
             success: true,
@@ -185,16 +96,12 @@ exports.deleteAllWaypoints = async (req, res) => {
     }
 };
 
-// --- FUNKCJE ADMINISTRACYJNE ---
+// --- ADMIN CONTROLLERS ---
 
 exports.getAllTripsAdmin = async (req, res) => {
     try {
-        // JEDYNA ZMIANA W PLIKU: dodanie .populate('waypoints')
-        const trips = await Trip.find()
-            .populate('user', 'username email')
-            .populate('waypoints');
-
-        res.status(200).json({ success: true, count: trips.length, data: trips });
+        const trips = await tripService.adminGetAllTrips();
+        res.status(200).json({ success: true, data: trips });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
@@ -202,32 +109,19 @@ exports.getAllTripsAdmin = async (req, res) => {
 
 exports.getAllWaypointsAdmin = async (req, res) => {
     try {
-        const waypoints = await Waypoint.find().populate('trip', 'title');
-        res.status(200).json({
-            success: true,
-            count: waypoints.length,
-            data: waypoints
-        });
+        const waypoints = await tripService.adminGetAllWaypoints();
+        res.status(200).json({ success: true, data: waypoints });
     } catch (err) {
-        res.status(500).json({ success: false, error: err.message });
+        res.status(500).json({ error: err.message });
     }
 };
 
-// --- GENEROWANIE AI ---
+// --- AI ---
 
 exports.generateAITrip = async (req, res) => {
     try {
-        // Kontroler woła serwis
-        const createdWaypoints = await tripService.generateAndSaveAIWaypoints(
-            req.params.id,
-            req.user
-        );
-
-        res.status(200).json({
-            success: true,
-            message: "AI wygenerowało trasę pomyślnie",
-            data: createdWaypoints
-        });
+        const waypoints = await tripService.generateAIWaypoints(req.params.id, req.user);
+        res.status(200).json({ success: true, data: waypoints });
     } catch (err) {
         res.status(500).json({ success: false, error: err.message });
     }
