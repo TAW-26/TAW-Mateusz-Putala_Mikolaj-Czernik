@@ -1,7 +1,6 @@
+const tripService = require('../services/tripService');
 const Trip = require('../models/Trip');
 const Waypoint = require('../models/Waypoint');
-const aiService = require('../services/aiService');
-const User = require('../models/User');
 
 // @desc    Utwórz nową wycieczkę (A -> B) - obsługuje aiSettings z automatu
 exports.createTrip = async (req, res) => {
@@ -84,13 +83,10 @@ exports.deleteTrip = async (req, res) => {
             return res.status(401).json({ message: 'Brak uprawnień' });
         }
 
-        await Waypoint.deleteMany({ trip: req.params.id });
-        await trip.deleteOne();
+        // Wołamy kaskadę z serwisu
+        await tripService.deleteTripCascade(req.params.id);
 
-        res.status(200).json({
-            success: true,
-            message: 'Wycieczka oraz wszystkie jej punkty zostały pomyślnie usunięte'
-        });
+        res.status(200).json({ success: true, message: 'Usunięto pomyślnie' });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
@@ -221,24 +217,11 @@ exports.getAllWaypointsAdmin = async (req, res) => {
 
 exports.generateAITrip = async (req, res) => {
     try {
-        const trip = await Trip.findById(req.params.id);
-        const user = await User.findById(req.user.id);
-
-        if (!trip) return res.status(404).json({ message: "Nie znaleziono wycieczki" });
-
-        // Wywołanie AI
-        const suggestedPoints = await aiService.generateWaypoints(trip, user);
-
-        // Wyczyszczenie starych punktów, jeśli istniały
-        await Waypoint.deleteMany({ trip: trip._id });
-
-        // Zapisanie nowych punktów do bazy
-        const createdWaypoints = await Promise.all(suggestedPoints.map(point => {
-            return Waypoint.create({
-                ...point,
-                trip: trip._id
-            });
-        }));
+        // Kontroler woła serwis
+        const createdWaypoints = await tripService.generateAndSaveAIWaypoints(
+            req.params.id,
+            req.user
+        );
 
         res.status(200).json({
             success: true,
@@ -246,7 +229,6 @@ exports.generateAITrip = async (req, res) => {
             data: createdWaypoints
         });
     } catch (err) {
-        console.error(err);
-        res.status(500).json({ success: false, error: "AI nie mogło wygenerować trasy. Spróbuj ponownie." });
+        res.status(500).json({ success: false, error: err.message });
     }
 };
