@@ -18,6 +18,7 @@ const httpRequestsTotal = new client.Counter({
 const httpRequestDurationMs = new client.Histogram({
     name: 'http_request_duration_ms',
     help: 'Czas trwania zadania w milisekundach',
+    labelNames: ['method', 'route', 'status_code'],
     buckets: [5, 10, 25, 50, 100, 250, 500, 1000],
     registers: [register],
 });
