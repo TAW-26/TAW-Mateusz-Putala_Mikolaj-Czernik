@@ -8,20 +8,18 @@ import User from '../models/User';
 describe('Auth API - Integration Tests', () => {
     let mongoServer;
 
-    // Zwiększamy timeout do 30s na wypadek wolnego neta/wolnego startu bazy
     beforeAll(async () => {
-        mongoServer = await MongoMemoryServer.create();
-        const uri = mongoServer.getUri();
-
         if (mongoose.connection.readyState !== 0) {
             await mongoose.disconnect();
         }
-        await mongoose.connect(uri);
+        await mongoose.connect('mongodb://localhost:27017/smart-voyager-auth-test');
     }, 30000);
 
     afterAll(async () => {
-        await mongoose.disconnect();
-        await mongoServer.stop();
+        if (mongoose.connection.readyState !== 0) {
+            await mongoose.connection.db.dropDatabase();
+            await mongoose.disconnect();
+        }
     });
 
     beforeEach(async () => {

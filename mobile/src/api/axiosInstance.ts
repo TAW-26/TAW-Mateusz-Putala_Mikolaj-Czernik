@@ -1,8 +1,8 @@
 import axios from 'axios';
 import { useAuthStore } from '../store/authStore'; // Importujemy Twój magazyn danych
 
-// const BASE_URL = 'http://192.168.0.13:5000/api';
-const BASE_URL = 'https://taw-mateusz-putala-mikolaj-czernik.onrender.com/api';
+const BASE_URL = 'http://192.168.50.44:5000/api';
+// const BASE_URL = 'https://taw-mateusz-putala-mikolaj-czernik.onrender.com/api';
 
 const api = axios.create({
     baseURL: BASE_URL,

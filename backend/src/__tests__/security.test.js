@@ -13,13 +13,17 @@ describe('Security & Authorization - Access Control', () => {
     let tokenB;
 
     beforeAll(async () => {
-        mongoServer = await MongoMemoryServer.create();
-        await mongoose.connect(mongoServer.getUri());
+        if (mongoose.connection.readyState !== 0) {
+            await mongoose.disconnect();
+        }
+        await mongoose.connect('mongodb://localhost:27017/smart-voyager-security-test');
     });
 
     afterAll(async () => {
-        await mongoose.disconnect();
-        await mongoServer.stop();
+        if (mongoose.connection.readyState !== 0) {
+            await mongoose.connection.db.dropDatabase();
+            await mongoose.disconnect();
+        }
     });
 
     beforeEach(async () => {

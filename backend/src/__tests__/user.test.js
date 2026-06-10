@@ -6,15 +6,18 @@ import User from '../models/User'; // upewnij się, że ścieżka jest OK
 describe('User Model - Hashing Logic (SRP)', () => {
     let mongoServer;
 
-    // Przygotowanie środowiska (Arrange)
     beforeAll(async () => {
-        mongoServer = await MongoMemoryServer.create();
-        await mongoose.connect(mongoServer.getUri());
+        if (mongoose.connection.readyState !== 0) {
+            await mongoose.disconnect();
+        }
+        await mongoose.connect('mongodb://localhost:27017/smart-voyager-user-test');
     });
 
     afterAll(async () => {
-        await mongoose.disconnect();
-        await mongoServer.stop();
+        if (mongoose.connection.readyState !== 0) {
+            await mongoose.connection.db.dropDatabase();
+            await mongoose.disconnect();
+        }
     });
 
     it('should encrypt password when a new user is created', async () => {
