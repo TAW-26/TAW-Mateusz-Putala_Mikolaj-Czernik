@@ -1,5 +1,5 @@
 services:
-  # 1. Serwis Bazy Danych
+
   database:
     image: mongo:latest
     container_name: voyager_mongodb
@@ -8,7 +8,6 @@ services:
     volumes:
       - mongo_data:/data/db
 
-  # 2. Serwis Backendowy
   backend:
     build: ./backend
     container_name: voyager_backend
@@ -17,14 +16,12 @@ services:
     environment:
       - PORT=5000
       - NODE_ENV=development
-      # Zamiast localhost używamy nazwy serwisu "database"
       - MONGO_URI=mongodb://database:27017/smart-voyager
       - JWT_SECRET
       - GROQ_API_KEY
     depends_on:
       - database
 
-  # 3. Serwis Frontendowy (Aplikacja Webowa)
   web:
     build: ./web
     container_name: voyager_web
@@ -35,6 +32,15 @@ services:
     depends_on:
       - backend
 
-# Wolumen zapewniający, że dane z bazy nie znikną po wyłączeniu kontenera
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: voyager_prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    depends_on:
+      - backend
+
 volumes:
   mongo_data:

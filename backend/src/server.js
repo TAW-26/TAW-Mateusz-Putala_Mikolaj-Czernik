@@ -8,12 +8,17 @@ const userRoutes = require('./routes/userRoutes');
 const { protect } = require('./middleware/authMiddleware');
 const { errorHandler } = require('./middleware/errorMiddleware');
 
+// Importy monitoringu (czyste, bez zbędnych tabulacji)
+const { metricsMiddleware } = require('./middleware/metricsMiddleware');
+const { register: prometheusRegister } = require('./config/metrics');
+
 // Konfiguracja środowiska i bazy danych
-// Upewnij się, że plik .env jest w folderze głównym backend/
 dotenv.config();
-//connectDB();
 
 const app = express();
+
+// Middleware metryk na samym początku
+app.use(metricsMiddleware);
 
 // Middleware globalne
 app.use(cors());
@@ -23,6 +28,12 @@ app.use(express.json());
 app.use('/api/auth', authRoutes);
 app.use('/api/trips', tripRoutes);
 app.use('/api/users', userRoutes);
+
+// !!! NOWY ENDPOINT DLA PROMETHEUSA !!!
+app.get('/metrics', async (_req, res) => {
+    res.set('Content-Type', prometheusRegister.contentType);
+    res.end(await prometheusRegister.metrics());
+});
 
 // Chroniona trasa profilu (dowód działania systemu autoryzacji)
 app.get('/api/auth/profile', protect, (req, res) => {
@@ -51,5 +62,3 @@ if (process.env.NODE_ENV !== 'test') {
 }
 
 module.exports = app;
-
-
