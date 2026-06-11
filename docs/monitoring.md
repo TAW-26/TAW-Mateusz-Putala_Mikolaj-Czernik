@@ -18,3 +18,13 @@ Całość została w pełni skonteneryzowana i zintegrowana w ramach pliku `dock
 
 2. **Dostęp do panelu zarządzania Prometheus:**
    `http://localhost:9090` (Zakładka *Status -> Targets* potwierdza stan połączenia kontenerów).
+
+## 3. Logowanie Błędów po stronie Serwera
+W ramach `errorMiddleware.js` zaimplementowano ustrukturyzowany format logowania wyjątków do strumienia `stdout` (konsoli kontenera). Każdy wpis zawiera:
+* Dokładny znacznik czasu w formacie ISO (`timestamp`).
+* Jawny typ rzuconego wyjątku (`type`).
+* Pełen kontekst sieciowy (`method`, `url`, `ip`).
+
+## 4. Testy Stabilności pod Obciążeniem (Load Testing)
+Do weryfikacji wydajności aplikacji w środowisku kontenerowym wykorzystano narzędzie **Grafana k6**. Skrypt testowy znajduje się w lokalizacji `tests-load/load-test.js`.
+Podczas testu zasymulowano ruch 20 wirtualnych użytkowników (*Virtual Users*) jednocześnie odpytujących API. Serwer zachował pełną stabilność, utrzymując czas odpowiedzi na poziomie percentyla `p(95) < 500ms`.
