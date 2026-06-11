@@ -5,23 +5,26 @@ Dzięki integracji z modelami LLM (OpenAI/Gemini), system generuje spersonalizow
 na podstawie budżetu i zainteresowań, ale również konkretnych parametrów logistycznych i budżetowych wycieczki.
 
 ## 🚀 Stan projektu
-Zakończono implementację rdzenia Backendowego, w tym:
-* **Inteligentne Planowanie (AI): Pełna integracja z Groq API (Llama 3.3). System wykonuje wielowymiarową analizę preferencji użytkownika oraz ustawień wycieczki.
+Zakończono implementację rdzenia Backendowego oraz infrastruktury DevOps, w tym:
+* **Inteligentne Planowanie (AI):** Pełna integracja z Groq API (Llama 3.3). System wykonuje wielowymiarową analizę preferencji użytkownika oraz ustawień wycieczki.
 * **Integracja z bazą danych:** Pełna komunikacja z MongoDB Atlas.
 * **Autoryzacja i Role (RBAC):** Zaawansowany system ról (User, Admin). Logowanie i rejestracja oparte na JWT oraz szyfrowaniu haseł (bcrypt).
 * **Pełny cykl edycji (CRUD):** Możliwość pełnego zarządzania profilami, wycieczkami oraz przystankami (Tworzenie, Odczyt, Aktualizacja, Usuwanie).
 * **Zaawansowana Logika Biznesowa:** * CRUD wycieczek z automatycznym wyliczaniem czasu trwania (`virtuals`).
     * Obsługa przystanków (**Waypoints**) z zachowaniem kolejności (`order_index`).
     * **Kaskadowe Usuwanie:** Usunięcie użytkownika lub wycieczki automatycznie czyści wszystkie powiązane dane (User -> Trips -> Waypoints).
-* **Panel Administracyjny:** Globalny wgląd w użytkowników, statystyki oraz pełną bazę wszystkich przystanków w systemie.
-* **Bezpieczeństwo:** Walidacja danych (express-validator), ochrona tras (Middleware) i weryfikacja uprawnień (właściciel vs admin).
+* **Infrastruktura i Monitoring (DevOps):**
+    * Pełna konteneryzacja całego stosu technologicznego (Web, Backend, MongoDB, Prometheus).
+    * Wdrożenie niezależnego zbierania metryk systemowych i aplikacyjnych za pomocą `prom-client` oraz serwera **Prometheus**.
+    * Implementacja ustrukturyzowanego middleware do logowania błędów serwera (timestamp, typ, kontekst sieciowy).
+    * Przygotowanie skryptów wydajnościowych do automatycznych testów stabilności pod obciążeniem (**Grafana k6**).
 
 ## 🛠 Technologie
-* **Backend:** Node.js, Express, JWT, MongoDB (Atlas), Mongoose
-* **Walidacja:** Express-Validator
-* **Frontend Web:** React, TypeScript, Axios
+* **Backend:** Node.js, Express, JWT, MongoDB, Mongoose
+* **Infrastruktura & Monitoring:** Docker, Docker Compose, Prometheus, Grafana k6
+* **Frontend Web:** React, TypeScript, Axios, Vite
 * **Frontend Mobile:** React Native (Expo), TypeScript, Zustand
-* **AI Integration:** OpenAI API / Gemini API (Planowane: generowanie waypointów na trasie)
+* **AI Integration:** Groq API (Llama 3.3)
 
 ## 📡 Backend API (Endpointy)
 
@@ -30,6 +33,11 @@ Zakończono implementację rdzenia Backendowego, w tym:
 | :--- | :--- | :--- | :--- |
 | POST | `/api/trips/:id/generate` | Generuje nową trasę (punkty) przy użyciu AI na podstawie preferencji usera | Użytkownik |
 | DELETE | `/api/trips/:id/waypoints` | Czyści wszystkie punkty z danej wycieczki | Użytkownik |
+
+### Monitoring i Metryki
+| Metoda | Endpoint | Opis | Uprawnienia |
+| :--- | :--- | :--- | :--- |
+| GET | `/metrics` | Endpoint metryk aplikacyjnych dla systemu Prometheus | Publiczne / Systemowe |
 
 ### Uwierzytelnianie i Profil (`/api/auth`)
 | Metoda | Endpoint | Opis | Uprawnienia |
@@ -67,30 +75,21 @@ Zakończono implementację rdzenia Backendowego, w tym:
 | DELETE | `/api/users/:id` | Usunięcie konta (Kaskadowo usuwa wycieczki i punkty) |
 
 ## 📂 Struktura Projektu
-* `/web` - Aplikacja webowa (React)
-* `/mobile` - Aplikacja mobilna (React Native)
-* `/backend` - Serwer API (Node.js)
-* `/docs` - Dokumentacja projektowa i schematy UML
+* `/web` - Aplikacja webowa (React + Vite)
+* `/mobile` - Aplikacja mobilna (React Native + Expo)
+* `/backend` - Serwer API (Node.js + Express)
+* `/docs` - Dokumentacja projektowa, monitoring oraz schematy UML
+* `/tests-load` - Skrypty wydajnościowe i obciążeniowe k6
 
-## ⚙️ Instalacja i uruchomienie (Środowisko Dev)
+## ⚙️ Uruchomienie Środowiska (Docker Compose)
 
-### Backend
-1. Przejdź do folderu: `cd backend`
-2. Zainstaluj zależności: `npm install`
-3. Skonfiguruj plik `.env` (`MONGO_URI`, `JWT_SECRET`, `GROQ_API_KEY`)
-4. Zainicjalizuj konto Administratora: `npm run seed:admin`
-    * Domyślne dane: `admin@voyager.pl` / `Haslo123!`
-5. Uruchom serwer: `npm run dev`
+Najwygodniejszym sposobem na uruchomienie pełnego ekosystemu (Backend, Frontend Web, Baza danych, Prometheus) jest użycie przygotowanej konfiguracji wielokontenerowej.
 
-### Frontend Web
-1. Przejdź do folderu: `cd web`
-2. Zainstaluj zależności: `npm install`
-3. Uruchom projekt: `npm start`
+### Wymagania wstępne:
+* Zainstalowany [Docker Desktop](https://www.docker.com/products/docker-desktop/)
 
-### Frontend Mobile
-1. Przejdź do folderu: `cd mobile`
-2. Zainstaluj zależności: `npm install`
-3. Uruchom projekt: `npx expo start`
-
-## 📄 Dokumentacja
-Pełna dokumentacja techniczna oraz schematy bazy danych znajdują się w folderze `/docs`.
+### Instrukcja startu:
+1. Skonfiguruj plik `.env` w folderze głównym projektu lub w `/backend` (upewnij się, że posiadasz poprawne klucze `GROQ_API_KEY` oraz `JWT_SECRET`).
+2. Uruchom terminal w głównym katalogu projektu i wpisz:
+   ```bash
+   docker compose up --build
