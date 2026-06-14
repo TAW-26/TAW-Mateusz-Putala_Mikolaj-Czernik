@@ -17,4 +17,4 @@ google-key.json
 # OS
 .DS_Store
 
-backend/.env
+.env
