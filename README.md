@@ -98,3 +98,44 @@ Po udanym wdrożeniu produkcyjnym, poszczególne moduły systemu oraz narzędzia
 | **Backend API Server** | `http://localhost:5000` | Główny serwer Express REST API | Środowisko: `production` |
 | **Surowe Metryki** | `http://localhost:5000/metrics` | Punkt poboru danych aplikacji dla Prometheusa | Publiczne / Systemowe |
 | **Panel Prometheus** | `http://localhost:9090` | Panel monitorowania wydajności i statystyk żądań | Systemowe |
+
+## Znane Ograniczenia (Known Limitations)
+
+* **Zależność od zewnętrznego API:** Moduł generowania tras jest ściśle uzależniony od stabilności, czasu odpowiedzi oraz limitów żądań (*rate limits*) zewnętrznego dostawcy Groq API. W przypadku braku ważnego klucza lub przeciążenia serwerów zewnętrznych, funkcja ta będzie niedostępna.
+* **Sztuczne generowanie współrzędnych geograficznych:** Punkty trasy (*waypoints*) tworzone przez model LLM posiadają poprawne logicznie nazwy, opisy oraz kolejność, jednak w obecnej fazie projektu nie są one mapowane na realne współrzędne GPS w czasie rzeczywistym.
+
+## Prezentacja Systemu (Screenshoty / Demo)
+
+*Poniższe zrzuty ekranu przedstawiają gotowy, działający system Smart Voyager oraz infrastrukturę monitoringu w środowisku produkcyjnym:*
+
+### 1. Panel Główny Web aplikacji
+* **Wymagana ścieżka pliku:** `docs/screenshots/web_main_panel.png`
+  ![Panel Główny](docs/screenshots/web_main_panel.png)
+
+### 2. Kreator wycieczek — Konfiguracja i parametry logistyczne
+*Służy do wprowadzania podstawowych danych wycieczki, takich jak ramy czasowe, lokalizacja bazowa oraz budżet.*
+* **Wymagana ścieżka pliku:** `docs/screenshots/web_new_trip_form.png`
+  ![Tworzenie nowej wycieczki](docs/screenshots/web_new_trip_form.png)
+
+### 3. Panel osobistych preferencji i rekomendacji miejsc AI
+*Miejsce, w którym użytkownik definiuje swoje zainteresowania, styl podróżowania oraz wymagania specjalne, na podstawie których Groq (Llama 3.3) dobiera polecane atrakcje.*
+* **Wymagana ścieżka pliku:** `docs/screenshots/web_ai_preferences.png`
+  ![Osobiste preferencje AI](docs/screenshots/web_ai_preferences.png)
+
+### 4. Wygenerowana trasa i plan podróży (Widok Mapy / Oś czasu)
+*Efekt końcowy działania modułu AI — ustrukturyzowana i posortowana chronologicznie lista przystanków (waypoints) wstrzyknięta do bazy danych.*
+* **Wymagana ścieżka pliku:** `docs/screenshots/web_generated_map.png`
+  ![Wygenerowana Trasa](docs/screenshots/web_generated_map.png)
+
+### 5. Panel Profilu Użytkownika
+*Widok pozwalający na wgląd w dane konta, zmianę haseł oraz zarządzanie profilem podróżnika zabezpieczonym przez JWT.*
+* **Wymagana ścieżka pliku:** `docs/screenshots/web_user_profile.png`
+  ![Panel profilu użytkownika](docs/screenshots/web_user_profile.png)
+
+### 6. Panel Administracyjny (Zarządzanie i Statystyki)
+* **Wymagana ścieżka pliku:** `docs/screenshots/web_admin_panel.png`
+  ![Panel Admina](docs/screenshots/web_admin_panel.png)
+
+### 7. Wykresy Wydajności w Systemie Prometheus (Metryki E2E)
+* **Wymagana ścieżka pliku:** `docs/screenshots/metryki_prometheus.png`
+  ![Prometheus Graph](docs/screenshots/metryki_prometheus.png)
