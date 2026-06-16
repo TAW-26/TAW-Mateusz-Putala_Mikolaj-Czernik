@@ -12,29 +12,28 @@ export class ErrorBoundary extends Component<Props, State> {
     }
 
     public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-        console.error("Critical System Failure:", error, errorInfo);
+        console.error('Application error:', error, errorInfo);
     }
 
     public render() {
         if (this.state.hasError) {
             return (
-                <div className="min-h-screen bg-zinc-950 flex flex-col items-center justify-center p-6 text-center">
-                    <div className="relative mb-6">
-                        <AlertTriangle size={80} className="text-red-500 animate-pulse" />
-                        <div className="absolute inset-0 blur-2xl bg-red-500/20 animate-pulse"></div>
+                <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col items-center justify-center p-6 text-center">
+                    <div className="w-12 h-12 bg-red-50 rounded-full flex items-center justify-center mb-5">
+                        <AlertTriangle size={24} className="text-red-600" />
                     </div>
-                    <h1 className="text-4xl font-black text-white mb-3 tracking-tighter">
-                        SYSTEM CRITICAL ERROR
+                    <h1 className="text-xl font-semibold text-slate-900 dark:text-slate-100 mb-2">
+                        Coś poszło nie tak
                     </h1>
-                    <p className="text-zinc-500 max-w-md mb-10 text-xs uppercase tracking-[0.3em] leading-relaxed">
-                        Neural link severed. Voyager interface encountered an unrecoverable exception.
+                    <p className="text-muted text-sm max-w-sm mb-6">
+                        Wystąpił nieoczekiwany błąd. Spróbuj odświeżyć stronę.
                     </p>
                     <button
                         onClick={() => window.location.href = '/dashboard'}
-                        className="flex items-center gap-3 px-8 py-4 bg-zinc-100 text-zinc-950 font-black rounded-2xl hover:scale-105 transition-all shadow-xl shadow-white/5"
+                        className="btn-primary"
                     >
-                        <RefreshCcw size={20} />
-                        <span>REBOOT INTERFACE</span>
+                        <RefreshCcw size={16} />
+                        Wróć do panelu
                     </button>
                 </div>
             );

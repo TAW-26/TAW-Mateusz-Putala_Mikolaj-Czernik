@@ -1,17 +1,23 @@
 import { useEffect, useState } from 'react';
 import { userService } from '../../api/userService';
+import { useUI } from '../../context/UIContext';
 import { ShieldCheck, ShieldAlert, Trash2, UserCog, Loader2 } from 'lucide-react';
+
+function roleLabel(role: string) {
+    return role === 'admin' ? 'administrator' : 'użytkownik';
+}
 
 export const UserManagementPage = () => {
     const [users, setUsers] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
+    const { toast, confirm } = useUI();
 
     const fetchUsers = async () => {
         try {
             const res = await userService.getAllUsers();
             setUsers(res.data);
         } catch (error) {
-            console.error("Błąd pobierania agentów", error);
+            console.error('Failed to fetch users', error);
         } finally {
             setLoading(false);
         }
@@ -21,81 +27,96 @@ export const UserManagementPage = () => {
 
     const handleToggleRole = async (user: any) => {
         const newRole = user.role === 'admin' ? 'user' : 'admin';
-        if (window.confirm(`Czy na pewno zmienić uprawnienia dla ${user.username} na ${newRole.toUpperCase()}?`)) {
+        const confirmed = await confirm(`Zmienić uprawnienia użytkownika ${user.username} na ${roleLabel(newRole)}?`);
+        if (!confirmed) return;
+        try {
             await userService.updateRole(user._id, newRole);
             fetchUsers();
+            toast(`Rola zmieniona na ${roleLabel(newRole)}.`, 'success');
+        } catch {
+            toast('Nie udało się zaktualizować roli.', 'error');
         }
     };
 
     const handleDeleteUser = async (id: string) => {
-        if (window.confirm("UWAGA: Czy na pewno chcesz trwale usunąć tego użytkownika z bazy?")) {
+        const confirmed = await confirm('Trwale usunąć tego użytkownika z bazy danych?');
+        if (!confirmed) return;
+        try {
             await userService.deleteUser(id);
             fetchUsers();
+            toast('Użytkownik usunięty.', 'success');
+        } catch {
+            toast('Nie udało się usunąć użytkownika.', 'error');
         }
     };
 
-    if (loading) return <div className="h-screen flex items-center justify-center bg-zinc-950 text-white"><Loader2 className="animate-spin" /></div>;
+    if (loading) {
+        return (
+            <div className="py-20 flex justify-center">
+                <Loader2 className="animate-spin text-slate-300" size={32} />
+            </div>
+        );
+    }
 
     return (
-        <div className="min-h-screen bg-zinc-950 text-zinc-100 p-8">
-            <header className="mb-12 border-b border-zinc-800 pb-8">
-                <div className="flex items-center gap-3 text-blue-500 mb-2">
-                    <UserCog size={20} />
-                    <span className="text-xs font-black uppercase tracking-[0.3em]">Personnel Management</span>
-                </div>
-                <h1 className="text-4xl font-bold tracking-tighter">OPERATIVES REGISTRY</h1>
+        <div>
+            <header className="mb-8">
+                <h1 className="page-title">Użytkownicy</h1>
+                <p className="page-subtitle mt-1">Zarządzaj kontami i poziomami dostępu</p>
             </header>
 
-            <div className="bg-zinc-900 border border-zinc-800 rounded-[2rem] overflow-hidden shadow-2xl">
+            <div className="card overflow-hidden">
                 <table className="w-full text-left">
-                    <thead className="bg-zinc-800/50 text-[10px] uppercase tracking-widest text-zinc-500 border-b border-zinc-800">
-                    <tr>
-                        <th className="p-6">Agent Name</th>
-                        <th className="p-6">Contact Email</th>
-                        <th className="p-6">Access Level</th>
-                        <th className="p-6 text-right">Procedures</th>
-                    </tr>
-                    </thead>
-                    <tbody className="divide-y divide-zinc-800">
-                    {users.map(user => (
-                        <tr key={user._id} className="hover:bg-white/[0.02] transition-colors group">
-                            <td className="p-6 font-bold flex items-center gap-3">
-                                <div className="w-8 h-8 bg-zinc-800 rounded-full flex items-center justify-center text-xs text-zinc-400 group-hover:border group-hover:border-blue-500/50">
-                                    {user.username.substring(0, 2).toUpperCase()}
-                                </div>
-                                {user.username}
-                            </td>
-                            <td className="p-6 text-sm text-zinc-400 font-mono">{user.email}</td>
-                            <td className="p-6">
-                                <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-tighter ${
-                                    user.role === 'admin'
-                                        ? 'bg-red-500/10 text-red-500 border border-red-500/20'
-                                        : 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20'
-                                }`}>
-                                    {user.role === 'admin' ? <ShieldAlert size={12} /> : <ShieldCheck size={12} />}
-                                    {user.role}
-                                </div>
-                            </td>
-                            <td className="p-6 text-right">
-                                <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <button
-                                        onClick={() => handleToggleRole(user)}
-                                        className="p-2 hover:bg-amber-500/10 text-amber-500 rounded-lg transition-colors border border-transparent hover:border-amber-500/20"
-                                        title="Promote/Demote"
-                                    >
-                                        <UserCog size={18} />
-                                    </button>
-                                    <button
-                                        onClick={() => handleDeleteUser(user._id)}
-                                        className="p-2 hover:bg-red-500/10 text-red-500 rounded-lg transition-colors border border-transparent hover:border-red-500/20"
-                                        title="Terminate Access"
-                                    >
-                                        <Trash2 size={18} />
-                                    </button>
-                                </div>
-                            </td>
+                    <thead className="bg-slate-50 dark:bg-slate-800/50 text-xs font-medium text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800">
+                        <tr>
+                            <th className="px-5 py-3">Imię i nazwa</th>
+                            <th className="px-5 py-3">E-mail</th>
+                            <th className="px-5 py-3">Rola</th>
+                            <th className="px-5 py-3 text-right">Akcje</th>
                         </tr>
-                    ))}
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                        {users.map(user => (
+                            <tr key={user._id} className="table-row group">
+                                <td className="px-5 py-4">
+                                    <div className="flex items-center gap-3 table-cell-strong">
+                                    <div className="w-8 h-8 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center text-xs font-medium text-slate-600 dark:text-slate-400">
+                                        {user.username.substring(0, 2).toUpperCase()}
+                                    </div>
+                                        {user.username}
+                                    </div>
+                                </td>
+                                <td className="px-5 py-4 table-cell">{user.email}</td>
+                                <td className="px-5 py-4">
+                                    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium ${
+                                        user.role === 'admin'
+                                            ? 'bg-red-50 text-red-700 border border-red-100'
+                                            : 'bg-emerald-50 text-emerald-700 border border-emerald-100'
+                                    }`}>
+                                        {user.role === 'admin' ? <ShieldAlert size={12} /> : <ShieldCheck size={12} />}
+                                        {roleLabel(user.role)}
+                                    </span>
+                                </td>
+                                <td className="px-5 py-4 text-right">
+                                    <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <button
+                                            onClick={() => handleToggleRole(user)}
+                                            className="p-2 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
+                                            title="Zmień rolę"
+                                        >
+                                            <UserCog size={16} />
+                                        </button>
+                                        <button
+                                            onClick={() => handleDeleteUser(user._id)}
+                                            className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                                            title="Usuń użytkownika"
+                                        >
+                                            <Trash2 size={16} />
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        ))}
                     </tbody>
                 </table>
             </div>

@@ -1,16 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import api from '../api/axiosInstance';
 import type { User } from '../types';
-import { motion } from 'framer-motion';
+import { useUI } from '../context/UIContext';
+import { Loader2 } from 'lucide-react';
 import {
     Sparkles,
-    Fingerprint,
     Zap,
-    Circle,
     CheckCircle2,
     Globe2,
     Map,
-    ShieldCheck,
     Palmtree,
     Utensils,
     Compass,
@@ -18,10 +16,15 @@ import {
     LibraryBig
 } from 'lucide-react';
 
+function roleLabel(role?: string) {
+    return role === 'admin' ? 'administrator' : 'użytkownik';
+}
+
 export const ProfilePage: React.FC = () => {
     const [user, setUser] = useState<User | null>(null);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
+    const { toast } = useUI();
 
     const defaultPreferences = {
         interests: [] as string[],
@@ -37,78 +40,78 @@ export const ProfilePage: React.FC = () => {
 
     const interestCategories = [
         {
-            name: 'Architecture',
+            name: 'Architektura',
             icon: <Building2 size={16} />,
             options: [
-                { id: 'architektura_zabytkowa', label: 'Historic Architecture' },
-                { id: 'architektura_nowoczesna', label: 'Modernism & Glass' },
-                { id: 'brutalizm', label: 'Brutalism' },
-                { id: 'industrializm', label: 'Industrial Design' },
-                { id: 'sakralna', label: 'Sacred Spaces' },
-                { id: 'urbanistyka', label: 'Urban Planning' }
+                { id: 'architektura_zabytkowa', label: 'Architektura zabytkowa' },
+                { id: 'architektura_nowoczesna', label: 'Modernizm i szkło' },
+                { id: 'brutalizm', label: 'Brutalizm' },
+                { id: 'industrializm', label: 'Design przemysłowy' },
+                { id: 'sakralna', label: 'Przestrzenie sakralne' },
+                { id: 'urbanistyka', label: 'Urbanistyka' }
             ]
         },
         {
-            name: 'History & Art',
+            name: 'Historia i sztuka',
             icon: <LibraryBig size={16} />,
             options: [
-                { id: 'muzea_sztuki', label: 'Art Galleries' },
-                { id: 'muzea_techniki', label: 'Tech & Engineering' },
-                { id: 'historia_wojenna', label: 'War History' },
-                { id: 'archeologia', label: 'Archaeological Sites' },
-                { id: 'sredniowiecze', label: 'Medieval Times' },
-                { id: 'renesans_barok', label: 'Renaissance & Baroque' },
-                { id: 'lokalny_folklor', label: 'Local Folklore' }
+                { id: 'muzea_sztuki', label: 'Galerie sztuki' },
+                { id: 'muzea_techniki', label: 'Technika i inżynieria' },
+                { id: 'historia_wojenna', label: 'Historia wojenna' },
+                { id: 'archeologia', label: 'Stanowiska archeologiczne' },
+                { id: 'sredniowiecze', label: 'Średniowiecze' },
+                { id: 'renesans_barok', label: 'Renesans i barok' },
+                { id: 'lokalny_folklor', label: 'Lokalny folklor' }
             ]
         },
         {
-            name: 'Nature & Outdoors',
+            name: 'Natura i outdoor',
             icon: <Palmtree size={16} />,
             options: [
-                { id: 'parki_narodowe', label: 'National Parks' },
-                { id: 'góry', label: 'High Mountains' },
-                { id: 'jeziora_i_rzeki', label: 'Lakes & Rivers' },
-                { id: 'gory_hiking', label: 'Mountain Hiking' },
-                { id: 'natura_parki', label: 'City Parks & Nature' },
-                { id: 'wybrzeze_plaze', label: 'Coastline & Beaches' },
-                { id: 'jaskinie', label: 'Caves & Geology' }
+                { id: 'parki_narodowe', label: 'Parki narodowe' },
+                { id: 'góry', label: 'Wysokie góry' },
+                { id: 'jeziora_i_rzeki', label: 'Jeziora i rzeki' },
+                { id: 'gory_hiking', label: 'Wędrówki górskie' },
+                { id: 'natura_parki', label: 'Parki miejskie i natura' },
+                { id: 'wybrzeze_plaze', label: 'Wybrzeże i plaże' },
+                { id: 'jaskinie', label: 'Jaskinie i geologia' }
             ]
         },
         {
-            name: 'Food & Drink',
+            name: 'Jedzenie i napoje',
             icon: <Utensils size={16} />,
             options: [
-                { id: 'kuchnia_lokalna', label: 'Local Gastronomy' },
-                { id: 'street_food', label: 'Street Food' },
-                { id: 'kawiarnie', label: 'Café Culture' },
-                { id: 'winiarnie_browary', label: 'Wineries & Breweries' },
-                { id: 'opcje_wege', label: 'Vegan Options' },
-                { id: 'fine_dining', label: 'Fine Dining' },
-                { id: 'targi_rolnicze', label: 'Farmer Markets' }
+                { id: 'kuchnia_lokalna', label: 'Kuchnia lokalna' },
+                { id: 'street_food', label: 'Street food' },
+                { id: 'kawiarnie', label: 'Kultura kawiarni' },
+                { id: 'winiarnie_browary', label: 'Winnice i browary' },
+                { id: 'opcje_wege', label: 'Opcje wegańskie' },
+                { id: 'fine_dining', label: 'Fine dining' },
+                { id: 'targi_rolnicze', label: 'Targi rolnicze' }
             ]
         },
         {
-            name: 'Lifestyle & Activity',
+            name: 'Styl życia i aktywność',
             icon: <Compass size={16} />,
             options: [
-                { id: 'punkty_widokowe', label: 'Photo Spots' },
-                { id: 'fotografia', label: 'Photography' },
-                { id: 'zycie_nocne', label: 'Nightlife' },
-                { id: 'zakupy', label: 'Shopping' },
-                { id: 'relaks_spa', label: 'Wellness & Spa' },
-                { id: 'technologia', label: 'Future & Tech' },
-                { id: 'sporty_ekstremalne', label: 'Extreme Sports' },
-                { id: 'lokalne_targi', label: 'Local Markets' }
+                { id: 'punkty_widokowe', label: 'Punkty widokowe' },
+                { id: 'fotografia', label: 'Fotografia' },
+                { id: 'zycie_nocne', label: 'Życie nocne' },
+                { id: 'zakupy', label: 'Zakupy' },
+                { id: 'relaks_spa', label: 'Wellness i spa' },
+                { id: 'technologia', label: 'Przyszłość i technologia' },
+                { id: 'sporty_ekstremalne', label: 'Sporty ekstremalne' },
+                { id: 'lokalne_targi', label: 'Lokalne targi' }
             ]
         }
     ];
 
     const travelStyleOptions = [
-        { id: 'avoidPaidAttractions', label: 'Avoid Paid Attractions' },
-        { id: 'onlyHiddenGems', label: 'Only Hidden Gems' },
-        { id: 'kidFriendly', label: 'Family Friendly' },
-        { id: 'disabilityAccess', label: 'Disability Access' },
-        { id: 'preferWalking', label: 'Prefer Walking' }
+        { id: 'avoidPaidAttractions', label: 'Unikaj płatnych atrakcji' },
+        { id: 'onlyHiddenGems', label: 'Tylko ukryte perełki' },
+        { id: 'kidFriendly', label: 'Przyjazne rodzinom' },
+        { id: 'disabilityAccess', label: 'Dostępność dla osób z niepełnosprawnością' },
+        { id: 'preferWalking', label: 'Preferuję chodzenie' }
     ];
 
     useEffect(() => {
@@ -166,79 +169,56 @@ export const ProfilePage: React.FC = () => {
                 const currentUser = JSON.parse(userRaw);
                 localStorage.setItem('user', JSON.stringify({ ...currentUser, ...res.data.user }));
             }
-            alert('Voyager Protocol Synchronized.');
-        } catch (err: any) {
-            alert("Sync error: " + (err.response?.data?.message || "Check connection"));
+            toast('Preferencje zapisane pomyślnie.', 'success');
+        } catch (err: unknown) {
+            const message = (err as { response?: { data?: { message?: string } } }).response?.data?.message || 'Sprawdź połączenie';
+            toast(`Błąd synchronizacji: ${message}`, 'error');
         } finally {
             setSaving(false);
         }
     };
 
     if (loading) return (
-        <div className="h-screen flex items-center justify-center bg-[#09090b]">
-            <motion.div animate={{ rotate: 360 }} transition={{ duration: 2, repeat: Infinity, ease: "linear" }}>
-                <Circle className="text-indigo-500 w-12 h-12 opacity-30" />
-            </motion.div>
+        <div className="py-20 flex justify-center">
+            <Loader2 className="animate-spin text-slate-300" size={32} />
         </div>
     );
 
     return (
-        /* Dodano relative z-0, aby nawigacja była zawsze nad tym kontenerem */
-        <div className="min-h-screen bg-[#09090b] text-zinc-100 selection:bg-indigo-500/30 relative z-0">
-            {/* Background Blurs - dodano -z-10, aby nie przykrywały tekstu ani nie kolidowały z nawigacją */}
-            <div className="fixed inset-0 overflow-hidden pointer-events-none -z-10">
-                <div className="absolute -top-[25%] -left-[10%] w-[50%] h-[50%] bg-indigo-500/10 blur-[120px] rounded-full" />
-                <div className="absolute top-[40%] -right-[10%] w-[40%] h-[40%] bg-purple-500/10 blur-[120px] rounded-full" />
-            </div>
+        <div>
+            <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+                <div>
+                    <h1 className="page-title">Preferencje podróży</h1>
+                    <p className="page-subtitle mt-1">
+                        Te ustawienia pomagają AI dopasować propozycje wycieczek
+                    </p>
+                </div>
 
-            <div className="max-w-[1200px] mx-auto py-16 px-6 relative z-10">
-                <header className="flex flex-col md:flex-row md:items-center justify-between gap-8 mb-20">
-                    <div className="flex items-center gap-6">
-                        <div className="relative group">
-                            <div className="absolute -inset-1 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-2xl blur opacity-25 group-hover:opacity-50 transition duration-1000"></div>
-                            <div className="relative w-16 h-16 bg-zinc-900 border border-zinc-800 rounded-2xl flex items-center justify-center text-indigo-400">
-                                <Fingerprint size={32} />
-                            </div>
-                        </div>
-                        <div>
-                            <div className="flex items-center gap-2 mb-1">
-                                <span className="h-px w-4 bg-indigo-500"></span>
-                                <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-indigo-400">Voyager Protocol</p>
-                            </div>
-                            <h2 className="text-3xl font-bold tracking-tight text-white">{user?.username}<span className="text-indigo-500">.</span></h2>
-                        </div>
-                    </div>
+                <button
+                    onClick={handleSave}
+                    disabled={saving}
+                    className="btn-primary"
+                >
+                    {saving ? <Loader2 className="animate-spin" size={16} /> : <Zap size={16} />}
+                    {saving ? 'Zapisywanie…' : 'Zapisz zmiany'}
+                </button>
+            </header>
 
-                    <button
-                        onClick={handleSave}
-                        disabled={saving}
-                        className="relative group px-8 py-4 bg-white text-black rounded-xl font-bold text-sm transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50"
-                    >
-                        <div className="relative z-10 flex items-center gap-3">
-                            {saving ? 'Syncing...' : 'Apply Changes'}
-                            <Zap size={16} className={saving ? 'animate-pulse' : 'fill-current'} />
-                        </div>
-                    </button>
-                </header>
+            <div className="grid lg:grid-cols-12 gap-6">
+                <div className="lg:col-span-8 space-y-6">
 
-                <div className="grid lg:grid-cols-12 gap-12">
-                    <div className="lg:col-span-8 space-y-12">
-
-                        {/* 1. AI INTEREST ENGINE (Z PODZIAŁEM NA KATEGORIE) */}
-                        <section className="bg-zinc-900/40 border border-zinc-800/50 backdrop-blur-md rounded-[2rem] p-8 md:p-10">
-                            <div className="flex items-center gap-3 mb-10">
-                                <div className="p-2 bg-indigo-500/10 rounded-lg">
-                                    <Sparkles className="text-indigo-400" size={20} />
-                                </div>
-                                <h3 className="text-lg font-semibold">AI Preference Engine</h3>
+                        <section className="card p-6 md:p-8">
+                            <div className="flex items-center gap-2 mb-6">
+                                <Sparkles className="text-slate-500" size={18} />
+                                <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100">Zainteresowania</h3>
                             </div>
 
                             <div className="space-y-10">
                                 {interestCategories.map((category) => (
                                     <div key={category.name}>
-                                        <div className="flex items-center gap-2 mb-4 text-zinc-400">
+                                        <div className="flex items-center gap-2 mb-3 text-slate-500">
                                             {category.icon}
-                                            <span className="text-[10px] font-black uppercase tracking-[0.2em]">{category.name}</span>
+                                            <span className="text-xs font-medium text-muted">{category.name}</span>
                                         </div>
                                         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
                                             {category.options.map((opt) => {
@@ -247,14 +227,14 @@ export const ProfilePage: React.FC = () => {
                                                     <button
                                                         key={opt.id}
                                                         onClick={() => toggleInterest(opt.id)}
-                                                        className={`flex items-center justify-between px-4 py-3 rounded-xl border transition-all duration-300 ${
+                                                        className={`flex items-center justify-between px-3 py-2.5 rounded-lg border text-sm transition-colors ${
                                                             active
-                                                                ? 'bg-indigo-600/20 border-indigo-500 text-white shadow-[0_0_15px_rgba(99,102,241,0.1)]'
-                                                                : 'bg-zinc-900/50 border-zinc-800 text-zinc-500 hover:border-zinc-700'
+                                                                ? 'bg-accent-muted border-accent text-slate-900 dark:text-slate-100'
+                                                                : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:border-slate-300 dark:hover:border-slate-600'
                                                         }`}
                                                     >
-                                                        <span className="text-[10px] font-bold uppercase tracking-wider">{opt.label}</span>
-                                                        {active && <CheckCircle2 size={14} className="text-indigo-400" />}
+                                                        <span className="font-medium">{opt.label}</span>
+                                                        {active && <CheckCircle2 size={14} />}
                                                     </button>
                                                 );
                                             })}
@@ -264,13 +244,10 @@ export const ProfilePage: React.FC = () => {
                             </div>
                         </section>
 
-                        {/* 2. TRAVEL LOGIC & CONSTRAINTS */}
-                        <section className="bg-zinc-900/40 border border-zinc-800/50 backdrop-blur-md rounded-[2rem] p-8 md:p-10">
-                            <div className="flex items-center gap-3 mb-10">
-                                <div className="p-2 bg-emerald-500/10 rounded-lg">
-                                    <Map className="text-emerald-400" size={20} />
-                                </div>
-                                <h3 className="text-lg font-semibold text-white">Travel Logic & Constraints</h3>
+                        <section className="card p-6 md:p-8">
+                            <div className="flex items-center gap-2 mb-6">
+                                <Map className="text-slate-500" size={18} />
+                                <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100">Styl podróży</h3>
                             </div>
 
                             <div className="flex flex-wrap gap-3">
@@ -281,8 +258,8 @@ export const ProfilePage: React.FC = () => {
                                         <button
                                             key={opt.id}
                                             onClick={() => toggleTravelStyle(opt.id)}
-                                            className={`px-5 py-3 rounded-xl border text-[10px] font-black uppercase tracking-widest transition-all ${
-                                                active ? 'bg-emerald-500/20 border-emerald-500 text-emerald-400 shadow-[0_0_20px_rgba(16,185,129,0.1)]' : 'bg-zinc-900/50 border-zinc-800 text-zinc-500 hover:border-zinc-700'
+                                            className={`px-4 py-2 rounded-lg border text-sm font-medium transition-colors ${
+                                                active ? 'bg-accent-muted border-accent text-slate-900 dark:text-slate-100' : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:border-slate-300 dark:hover:border-slate-600'
                                             }`}
                                         >
                                             {opt.label}
@@ -292,17 +269,14 @@ export const ProfilePage: React.FC = () => {
                             </div>
                         </section>
 
-                        {/* 3. NEURAL DIRECTIVES */}
-                        <section className="bg-zinc-900/40 border border-zinc-800/50 backdrop-blur-md rounded-[2rem] p-8 md:p-10">
-                            <div className="flex items-center gap-3 mb-8">
-                                <div className="p-2 bg-purple-500/10 rounded-lg">
-                                    <Globe2 className="text-purple-400" size={20} />
-                                </div>
-                                <h3 className="text-lg font-semibold">Neural Directives</h3>
+                        <section className="card p-6 md:p-8">
+                            <div className="flex items-center gap-2 mb-4">
+                                <Globe2 className="text-slate-500" size={18} />
+                                <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100">Notatki osobiste</h3>
                             </div>
                             <textarea
-                                className="w-full bg-zinc-950/50 border border-zinc-800 rounded-2xl p-6 text-sm text-zinc-300 focus:border-purple-500/50 outline-none min-h-[150px] transition-all resize-none"
-                                placeholder="Example: Always suggest vegan restaurants or avoid steep stairs..."
+                                className="input-field min-h-[120px] resize-none"
+                                placeholder="Przykład: Zawsze proponuj restauracje wegańskie lub unikaj stromych schodów..."
                                 value={user?.preferences?.personalNotes || ''}
                                 onChange={(e) => {
                                     if (!user) return;
@@ -316,27 +290,24 @@ export const ProfilePage: React.FC = () => {
                         </section>
                     </div>
 
-                    <aside className="lg:col-span-4 space-y-6">
-                        <div className="bg-zinc-900/80 border border-zinc-800 backdrop-blur-md rounded-[2.5rem] p-8">
-                            <div className="flex items-center gap-2 text-zinc-500 mb-10 text-[10px] font-bold uppercase tracking-[0.2em]">
-                                <ShieldCheck size={14} className="text-indigo-500" /> Secure Protocol
-                            </div>
-                            <div className="space-y-6">
+                    <aside className="lg:col-span-4">
+                        <div className="card p-6">
+                            <h3 className="text-sm font-medium text-slate-900 dark:text-slate-100 mb-4">Konto</h3>
+                            <div className="space-y-4">
                                 <div>
-                                    <p className="text-[10px] font-bold text-zinc-600 uppercase mb-2">Identifier</p>
-                                    <p className="text-sm font-medium text-zinc-300">{user?.email}</p>
+                                    <p className="text-xs text-slate-400 mb-1">E-mail</p>
+                                    <p className="text-sm text-slate-700 dark:text-slate-300">{user?.email}</p>
                                 </div>
-                                <div className="pt-6 border-t border-zinc-800/50">
-                                    <p className="text-[10px] font-bold text-zinc-600 uppercase mb-4">Clearance</p>
-                                    <span className="px-3 py-1 bg-indigo-500/10 border border-indigo-500/20 rounded-full text-[10px] font-black text-indigo-400 uppercase">
-                                        Level: {user?.role}
+                                <div className="pt-4 border-t border-slate-100">
+                                    <p className="text-xs text-slate-400 mb-2">Rola</p>
+                                    <span className="px-2.5 py-1 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md text-xs font-medium text-slate-700 dark:text-slate-300">
+                                        {roleLabel(user?.role)}
                                     </span>
                                 </div>
                             </div>
                         </div>
                     </aside>
                 </div>
-            </div>
         </div>
     );
 };

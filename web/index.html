@@ -1,10 +1,14 @@
 <!doctype html>
-<html lang="en">
+<html lang="pl">
 <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Voyager AI</title>
+    <title>Smart Voyager</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
 
     <link
             rel="stylesheet"
@@ -14,13 +18,24 @@
     />
 
     <style>
-        /* 2. Opcjonalne: Zapewnienie, że kontenery mapy mają podstawowy styl */
         .leaflet-container {
             width: 100%;
             height: 100%;
-            background-color: #09090b !important; /* Pasuje do Twojego motywu zinc-950 */
         }
     </style>
+    <script>
+        (function () {
+            try {
+                var raw = localStorage.getItem('smart-voyager-appearance');
+                var s = raw ? JSON.parse(raw) : { colorMode: 'system', accent: 'slate', density: 'comfortable' };
+                var dark = s.colorMode === 'dark' || (s.colorMode === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+                var root = document.documentElement;
+                if (dark) root.classList.add('dark');
+                root.dataset.accent = s.accent || 'slate';
+                root.dataset.density = s.density || 'comfortable';
+            } catch (e) {}
+        })();
+    </script>
 </head>
 <body>
 <div id="root"></div>

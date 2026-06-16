@@ -1,1 +1,248 @@
 @import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme inline {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-muted: var(--accent-muted);
+  --color-page: var(--bg-page);
+  --color-surface: var(--bg-surface);
+  --color-elevated: var(--bg-elevated);
+  --color-border: var(--border-color);
+}
+
+:root {
+  --bg-page: #f8fafc;
+  --bg-surface: #ffffff;
+  --bg-elevated: #f1f5f9;
+  --border-color: #e2e8f0;
+  --text-primary: #0f172a;
+  --text-secondary: #64748b;
+  --accent: #0f172a;
+  --accent-hover: #1e293b;
+  --accent-muted: #f1f5f9;
+  --shadow-color: rgb(15 23 42 / 0.06);
+  --map-bg: #e2e8f0;
+  color-scheme: light;
+}
+
+.dark {
+  --bg-page: #020617;
+  --bg-surface: #0f172a;
+  --bg-elevated: #1e293b;
+  --border-color: #334155;
+  --text-primary: #f8fafc;
+  --text-secondary: #94a3b8;
+  --accent-muted: #1e293b;
+  --shadow-color: rgb(0 0 0 / 0.35);
+  --map-bg: #1e293b;
+  color-scheme: dark;
+}
+
+:root[data-accent="slate"] {
+  --accent: #0f172a;
+  --accent-hover: #1e293b;
+}
+.dark[data-accent="slate"] {
+  --accent: #e2e8f0;
+  --accent-hover: #f8fafc;
+  --accent-muted: #334155;
+}
+
+:root[data-accent="blue"] {
+  --accent: #2563eb;
+  --accent-hover: #1d4ed8;
+  --accent-muted: #eff6ff;
+}
+.dark[data-accent="blue"] {
+  --accent: #3b82f6;
+  --accent-hover: #60a5fa;
+  --accent-muted: #1e3a5f;
+}
+
+:root[data-accent="violet"] {
+  --accent: #7c3aed;
+  --accent-hover: #6d28d9;
+  --accent-muted: #f5f3ff;
+}
+.dark[data-accent="violet"] {
+  --accent: #8b5cf6;
+  --accent-hover: #a78bfa;
+  --accent-muted: #2e1065;
+}
+
+:root[data-accent="emerald"] {
+  --accent: #059669;
+  --accent-hover: #047857;
+  --accent-muted: #ecfdf5;
+}
+.dark[data-accent="emerald"] {
+  --accent: #34d399;
+  --accent-hover: #6ee7b7;
+  --accent-muted: #064e3b;
+}
+
+:root[data-accent="rose"] {
+  --accent: #e11d48;
+  --accent-hover: #be123c;
+  --accent-muted: #fff1f2;
+}
+.dark[data-accent="rose"] {
+  --accent: #fb7185;
+  --accent-hover: #fda4af;
+  --accent-muted: #881337;
+}
+
+:root[data-accent="amber"] {
+  --accent: #d97706;
+  --accent-hover: #b45309;
+  --accent-muted: #fffbeb;
+}
+.dark[data-accent="amber"] {
+  --accent: #fbbf24;
+  --accent-hover: #fcd34d;
+  --accent-muted: #78350f;
+}
+
+html {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+html.theme-transition,
+html.theme-transition *,
+html.theme-transition *::before,
+html.theme-transition *::after {
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.15s ease, box-shadow 0.2s ease !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html.theme-transition,
+  html.theme-transition *,
+  html.theme-transition *::before,
+  html.theme-transition *::after {
+    transition: none !important;
+  }
+}
+
+body {
+  font-family: var(--font-sans);
+  color: var(--text-primary);
+  background-color: var(--bg-page);
+}
+
+.leaflet-container {
+  background-color: var(--map-bg) !important;
+  font-family: var(--font-sans);
+}
+
+@layer components {
+  .page-title {
+    @apply text-2xl font-semibold text-slate-900 dark:text-slate-100 tracking-tight;
+  }
+
+  .page-subtitle {
+    @apply text-sm text-slate-500 dark:text-slate-400;
+  }
+
+  .card {
+    @apply bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-sm;
+  }
+
+  .card-interactive {
+    @apply bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-sm hover:border-slate-300 dark:hover:border-slate-700 hover:shadow-md transition-all duration-200;
+  }
+
+  .input-field {
+    @apply w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg py-2.5 px-4 text-sm text-slate-900 dark:text-slate-100 outline-none focus:border-accent transition-colors placeholder:text-slate-400 dark:placeholder:text-slate-500;
+  }
+
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-accent text-white rounded-lg text-sm font-medium hover:bg-accent-hover transition-colors disabled:opacity-50;
+  }
+
+  .dark[data-accent="slate"] .btn-primary {
+    @apply text-slate-900;
+  }
+
+  .dark[data-accent="amber"] .btn-primary {
+    @apply text-slate-900;
+  }
+
+  .dark[data-accent="emerald"] .btn-primary {
+    @apply text-slate-900;
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 rounded-lg text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors;
+  }
+
+  .nav-link-active {
+    @apply bg-accent-muted text-slate-900 dark:text-slate-100 font-medium;
+  }
+
+  .form-label {
+    @apply text-sm font-medium text-slate-700 dark:text-slate-300;
+  }
+
+  .text-muted {
+    @apply text-slate-500 dark:text-slate-400;
+  }
+
+  .text-body {
+    @apply text-slate-700 dark:text-slate-300;
+  }
+
+  .table-head {
+    @apply bg-slate-50 dark:bg-slate-800/50 text-xs font-medium text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800;
+  }
+
+  .table-row {
+    @apply hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors;
+  }
+
+  .table-cell {
+    @apply text-sm text-slate-600 dark:text-slate-400;
+  }
+
+  .table-cell-strong {
+    @apply font-medium text-slate-900 dark:text-slate-100;
+  }
+
+  .option-selected {
+    @apply bg-accent-muted border-accent text-slate-900 dark:text-slate-100;
+  }
+
+  .option-default {
+    @apply border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800;
+  }
+
+  .glass-header {
+    @apply bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800/80;
+  }
+
+  .glass-sidebar {
+    @apply bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-r border-slate-200/80 dark:border-slate-800/80;
+  }
+}
+
+[data-density="compact"] .layout-content {
+  padding: 0.75rem;
+}
+
+@media (min-width: 768px) {
+  [data-density="compact"] .layout-content {
+    padding: 1.25rem;
+  }
+}
+
+[data-density="compact"] .card,
+[data-density="compact"] .card-interactive {
+  padding: 1rem;
+}
+
+[data-density="compact"] .page-title {
+  @apply text-xl;
+}
