@@ -1,25 +1,55 @@
 import React from 'react';
-import { NavigationContainer } from '@react-navigation/native';
+import { ActivityIndicator, View } from 'react-native';
+import { StatusBar } from 'expo-status-bar';
+import { NavigationContainer, DefaultTheme, DarkTheme } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { ThemeProvider, useTheme } from './src/context/ThemeContext';
 import { useAuthStore } from './src/store/authStore';
 import LoginScreen from './src/screens/LoginScreen';
-import RegisterScreen from './src/screens/RegisterScreen'; // DODANY IMPORT
+import RegisterScreen from './src/screens/RegisterScreen';
 import HomeScreen from './src/screens/HomeScreen';
 import AddTripScreen from './src/screens/AddTripScreen';
 import TripDetailsScreen from './src/screens/TripDetailsScreen';
 import ProfileScreen from './src/screens/ProfileScreen';
-import EditTripScreen from "./src/screens/EditTripScreen";
-import SettingsScreen from "./src/screens/SettingsScreen";
-import UserPreferencesScreen from "./src/screens/UserPreferencesScreen";
+import EditTripScreen from './src/screens/EditTripScreen';
+import SettingsScreen from './src/screens/SettingsScreen';
+import UserPreferencesScreen from './src/screens/UserPreferencesScreen';
 
 const Stack = createNativeStackNavigator();
 
-export default function App() {
+function AppNavigation() {
     const token = useAuthStore((state) => state.token);
+    const { ready, colors, common } = useTheme();
+
+    const navTheme = {
+        ...(colors.statusBar === 'light' ? DarkTheme : DefaultTheme),
+        colors: {
+            ...(colors.statusBar === 'light' ? DarkTheme.colors : DefaultTheme.colors),
+            background: colors.page,
+            card: colors.surface,
+            text: colors.text,
+            border: colors.border,
+            primary: colors.accent,
+        },
+    };
+
+    if (!ready) {
+        return (
+            <View style={common.centered}>
+                <ActivityIndicator size="large" color={colors.textMuted} />
+            </View>
+        );
+    }
 
     return (
-        <NavigationContainer>
-            <Stack.Navigator screenOptions={{ headerShown: false }}>
+        <NavigationContainer theme={navTheme}>
+            <StatusBar style={colors.statusBar} />
+            <Stack.Navigator
+                screenOptions={{
+                    headerShown: false,
+                    contentStyle: { backgroundColor: colors.page },
+                }}
+            >
                 {token ? (
                     <>
                         <Stack.Screen name="Home" component={HomeScreen} />
@@ -38,5 +68,13 @@ export default function App() {
                 )}
             </Stack.Navigator>
         </NavigationContainer>
+    );
+}
+
+export default function App() {
+    return (
+        <ThemeProvider>
+            <AppNavigation />
+        </ThemeProvider>
     );
 }

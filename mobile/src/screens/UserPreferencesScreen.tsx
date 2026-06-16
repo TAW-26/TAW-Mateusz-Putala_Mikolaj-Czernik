@@ -1,115 +1,109 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
     StyleSheet, Text, View, ScrollView, TouchableOpacity,
-    SafeAreaView, ActivityIndicator, Alert, Platform, TextInput
+    SafeAreaView, ActivityIndicator, Alert, TextInput,
 } from 'react-native';
 import {
-    ChevronLeft, Sparkles, Zap, Building2, LibraryBig,
-    Palmtree, Utensils, Compass, Map, Globe2, CheckCircle2
+    Sparkles, Zap, Building2, LibraryBig,
+    Palmtree, Utensils, Compass, Map, Globe2, CheckCircle2,
 } from 'lucide-react-native';
 import api from '../api/axiosInstance';
+import { ScreenHeader } from '../components/ui/ScreenHeader';
+import { useTheme } from '../context/ThemeContext';
+
+const interestCategories = [
+    {
+        name: 'Architektura',
+        icon: Building2,
+        options: [
+            { id: 'architektura_zabytkowa', label: 'Zabytkowa' },
+            { id: 'architektura_nowoczesna', label: 'Modernizm' },
+            { id: 'brutalizm', label: 'Brutalizm' },
+            { id: 'industrializm', label: 'Industrial' },
+            { id: 'sakralna', label: 'Sakralna' },
+            { id: 'urbanistyka', label: 'Urbanistyka' },
+        ],
+    },
+    {
+        name: 'Historia i sztuka',
+        icon: LibraryBig,
+        options: [
+            { id: 'muzea_sztuki', label: 'Galerie' },
+            { id: 'muzea_techniki', label: 'Technika' },
+            { id: 'historia_wojenna', label: 'Historia wojenna' },
+            { id: 'archeologia', label: 'Archeologia' },
+            { id: 'sredniowiecze', label: 'Średniowiecze' },
+            { id: 'renesans_barok', label: 'Renesans' },
+            { id: 'lokalny_folklor', label: 'Folklor' },
+        ],
+    },
+    {
+        name: 'Natura',
+        icon: Palmtree,
+        options: [
+            { id: 'parki_narodowe', label: 'Parki narodowe' },
+            { id: 'góry', label: 'Góry' },
+            { id: 'jeziora_i_rzeki', label: 'Jeziora i rzeki' },
+            { id: 'gory_hiking', label: 'Wędrówki' },
+            { id: 'natura_parki', label: 'Parki miejskie' },
+            { id: 'wybrzeze_plaze', label: 'Plaże' },
+            { id: 'jaskinie', label: 'Jaskinie' },
+        ],
+    },
+    {
+        name: 'Jedzenie',
+        icon: Utensils,
+        options: [
+            { id: 'kuchnia_lokalna', label: 'Lokalna' },
+            { id: 'street_food', label: 'Street food' },
+            { id: 'kawiarnie', label: 'Kawiarnie' },
+            { id: 'winiarnie_browary', label: 'Winnice' },
+            { id: 'opcje_wege', label: 'Wege' },
+            { id: 'fine_dining', label: 'Fine dining' },
+            { id: 'targi_rolnicze', label: 'Targi' },
+        ],
+    },
+    {
+        name: 'Aktywność',
+        icon: Compass,
+        options: [
+            { id: 'punkty_widokowe', label: 'Widoki' },
+            { id: 'fotografia', label: 'Fotografia' },
+            { id: 'zycie_nocne', label: 'Nocne życie' },
+            { id: 'zakupy', label: 'Zakupy' },
+            { id: 'relaks_spa', label: 'Wellness' },
+            { id: 'technologia', label: 'Technologia' },
+            { id: 'sporty_ekstremalne', label: 'Ekstremalne' },
+        ],
+    },
+];
+
+const travelStyleOptions = [
+    { id: 'avoidPaidAttractions', label: 'Unikaj płatnych' },
+    { id: 'onlyHiddenGems', label: 'Ukryte perełki' },
+    { id: 'kidFriendly', label: 'Rodzinne' },
+    { id: 'disabilityAccess', label: 'Dostępność' },
+    { id: 'preferWalking', label: 'Chodzenie' },
+];
 
 export default function UserPreferencesScreen({ navigation }: any) {
+    const { colors, common, spacing, radius } = useTheme();
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [preferences, setPreferences] = useState<any>({
         interests: [],
         travelStyle: {},
-        personalNotes: ""
+        personalNotes: '',
     });
 
-    // PEŁNA LISTA KATEGORII I OPCJI Z WERSJI WEB
-    const interestCategories = [
-        {
-            name: 'Architecture',
-            icon: Building2,
-            options: [
-                { id: 'architektura_zabytkowa', label: 'Historic' },
-                { id: 'architektura_nowoczesna', label: 'Modernism' },
-                { id: 'brutalizm', label: 'Brutalism' },
-                { id: 'industrializm', label: 'Industrial' },
-                { id: 'sakralna', label: 'Sacred Spaces' },
-                { id: 'urbanistyka', label: 'Urban Planning' }
-            ]
-        },
-        {
-            name: 'History & Art',
-            icon: LibraryBig,
-            options: [
-                { id: 'muzea_sztuki', label: 'Art Galleries' },
-                { id: 'muzea_techniki', label: 'Tech & Eng' },
-                { id: 'historia_wojenna', label: 'War History' },
-                { id: 'archeologia', label: 'Archaeological' },
-                { id: 'sredniowiecze', label: 'Medieval' },
-                { id: 'renesans_barok', label: 'Renaissance' },
-                { id: 'lokalny_folklor', label: 'Local Folklore' }
-            ]
-        },
-        {
-            name: 'Nature & Outdoors',
-            icon: Palmtree,
-            options: [
-                { id: 'parki_narodowe', label: 'National Parks' },
-                { id: 'góry', label: 'High Mountains' },
-                { id: 'jeziora_i_rzeki', label: 'Lakes & Rivers' },
-                { id: 'gory_hiking', label: 'Hiking' },
-                { id: 'natura_parki', label: 'City Nature' },
-                { id: 'wybrzeze_plaze', label: 'Beaches' },
-                { id: 'jaskinie', label: 'Caves' }
-            ]
-        },
-        {
-            name: 'Food & Drink',
-            icon: Utensils,
-            options: [
-                { id: 'kuchnia_lokalna', label: 'Local Gastro' },
-                { id: 'street_food', label: 'Street Food' },
-                { id: 'kawiarnie', label: 'Café Culture' },
-                { id: 'winiarnie_browary', label: 'Wineries' },
-                { id: 'opcje_wege', label: 'Vegan' },
-                { id: 'fine_dining', label: 'Fine Dining' },
-                { id: 'targi_rolnicze', label: 'Markets' }
-            ]
-        },
-        {
-            name: 'Lifestyle & Activity',
-            icon: Compass,
-            options: [
-                { id: 'punkty_widokowe', label: 'Photo Spots' },
-                { id: 'fotografia', label: 'Photography' },
-                { id: 'zycie_nocne', label: 'Nightlife' },
-                { id: 'zakupy', label: 'Shopping' },
-                { id: 'relaks_spa', label: 'Wellness' },
-                { id: 'technologia', label: 'Future Tech' },
-                { id: 'sporty_ekstremalne', label: 'Extreme' }
-            ]
-        }
-    ];
-
-    const travelStyleOptions = [
-        { id: 'avoidPaidAttractions', label: 'Avoid Paid' },
-        { id: 'onlyHiddenGems', label: 'Only Hidden Gems' },
-        { id: 'kidFriendly', label: 'Family Friendly' },
-        { id: 'disabilityAccess', label: 'Disability Access' },
-        { id: 'preferWalking', label: 'Prefer Walking' }
-    ];
-
     useEffect(() => {
-        fetchPreferences();
+        api.get('/auth/profile')
+            .then((res) => {
+                if (res.data.user.preferences) setPreferences(res.data.user.preferences);
+            })
+            .catch(() => Alert.alert('Błąd', 'Nie udało się pobrać preferencji.'))
+            .finally(() => setLoading(false));
     }, []);
-
-    const fetchPreferences = async () => {
-        try {
-            const res = await api.get('/auth/profile');
-            if (res.data.user.preferences) {
-                setPreferences(res.data.user.preferences);
-            }
-        } catch (err) {
-            Alert.alert("Error", "Failed to fetch neural protocol.");
-        } finally {
-            setLoading(false);
-        }
-    };
 
     const toggleInterest = (id: string) => {
         const current = preferences.interests || [];
@@ -120,7 +114,7 @@ export default function UserPreferencesScreen({ navigation }: any) {
     const toggleStyle = (id: string) => {
         setPreferences({
             ...preferences,
-            travelStyle: { ...preferences.travelStyle, [id]: !preferences.travelStyle[id] }
+            travelStyle: { ...preferences.travelStyle, [id]: !preferences.travelStyle?.[id] },
         });
     };
 
@@ -128,44 +122,71 @@ export default function UserPreferencesScreen({ navigation }: any) {
         setSaving(true);
         try {
             await api.put('/auth/profile', { preferences });
-            Alert.alert("Success", "Voyager Protocol Synchronized.");
+            Alert.alert('Sukces', 'Preferencje zapisane.');
             navigation.goBack();
-        } catch (err) {
-            Alert.alert("Sync Error", "Connection failed.");
+        } catch {
+            Alert.alert('Błąd', 'Synchronizacja nie powiodła się.');
         } finally {
             setSaving(false);
         }
     };
 
-    if (loading) return (
-        <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color="#6366f1" />
-        </View>
-    );
+    const styles = useMemo(() => StyleSheet.create({
+        scroll: { padding: spacing.lg, paddingBottom: 40 },
+        sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: spacing.md },
+        catBox: { marginBottom: spacing.md },
+        catTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: spacing.sm },
+        catName: { fontSize: 12, fontWeight: '600', color: colors.textMuted },
+        chipGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+        chip: {
+            flexDirection: 'row', alignItems: 'center', gap: 4,
+            paddingHorizontal: 12, paddingVertical: 8,
+            borderRadius: radius.md, backgroundColor: colors.surface,
+            borderWidth: 1, borderColor: colors.border,
+        },
+        chipActive: { backgroundColor: colors.accent, borderColor: colors.accent },
+        chipText: { fontSize: 13, fontWeight: '500', color: colors.textSecondary },
+        chipTextActive: { color: colors.onAccent },
+        chipStyleActive: { backgroundColor: colors.emeraldBg, borderColor: colors.emerald },
+        chipStyleTextActive: { color: colors.emerald },
+        textArea: {
+            backgroundColor: colors.surface, borderRadius: radius.lg,
+            borderWidth: 1, borderColor: colors.border,
+            padding: spacing.md, minHeight: 100, textAlignVertical: 'top',
+            fontSize: 14, color: colors.text,
+        },
+    }), [colors, spacing, radius]);
+
+    if (loading) {
+        return (
+            <View style={common.centered}>
+                <ActivityIndicator size="large" color={colors.textMuted} />
+            </View>
+        );
+    }
 
     return (
-        <SafeAreaView style={styles.container}>
-            <View style={styles.header}>
-                <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-                    <ChevronLeft color="#18181b" size={24} />
-                </TouchableOpacity>
-                <Text style={styles.headerTitle}>Neural Protocol</Text>
-                <TouchableOpacity onPress={handleSave} disabled={saving} style={styles.saveIconBtn}>
-                    {saving ? <ActivityIndicator size={20} color="#6366f1" /> : <Zap size={22} color="#6366f1" fill="#6366f1" />}
-                </TouchableOpacity>
-            </View>
+        <SafeAreaView style={common.screen}>
+            <ScreenHeader
+                title="Preferencje podróży"
+                onBack={() => navigation.goBack()}
+                right={
+                    <TouchableOpacity onPress={handleSave} disabled={saving} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
+                        {saving ? <ActivityIndicator size="small" color={colors.text} /> : <Zap size={22} color={colors.text} />}
+                    </TouchableOpacity>
+                }
+            />
 
-            <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-                {/* 1. AI INTEREST ENGINE */}
+            <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
                 <View style={styles.sectionHeader}>
-                    <Sparkles size={18} color="#6366f1" />
-                    <Text style={styles.sectionTitle}>AI Preference Engine</Text>
+                    <Sparkles size={18} color={colors.textSecondary} />
+                    <Text style={common.sectionTitle}>Zainteresowania</Text>
                 </View>
 
                 {interestCategories.map((cat) => (
                     <View key={cat.name} style={styles.catBox}>
                         <View style={styles.catTitleRow}>
-                            <cat.icon size={14} color="#71717a" />
+                            <cat.icon size={14} color={colors.textMuted} />
                             <Text style={styles.catName}>{cat.name}</Text>
                         </View>
                         <View style={styles.chipGrid}>
@@ -178,7 +199,7 @@ export default function UserPreferencesScreen({ navigation }: any) {
                                         style={[styles.chip, active && styles.chipActive]}
                                     >
                                         <Text style={[styles.chipText, active && styles.chipTextActive]}>{opt.label}</Text>
-                                        {active && <CheckCircle2 size={12} color="#fff" style={{marginLeft: 4}} />}
+                                        {active && <CheckCircle2 size={12} color="#fff" />}
                                     </TouchableOpacity>
                                 );
                             })}
@@ -186,10 +207,9 @@ export default function UserPreferencesScreen({ navigation }: any) {
                     </View>
                 ))}
 
-                {/* 2. TRAVEL LOGIC */}
-                <View style={[styles.sectionHeader, { marginTop: 20 }]}>
-                    <Map size={18} color="#10b981" />
-                    <Text style={styles.sectionTitle}>Travel Logic & Constraints</Text>
+                <View style={[styles.sectionHeader, { marginTop: spacing.lg }]}>
+                    <Map size={18} color={colors.textSecondary} />
+                    <Text style={common.sectionTitle}>Styl podróży</Text>
                 </View>
                 <View style={styles.chipGrid}>
                     {travelStyleOptions.map((opt) => {
@@ -198,61 +218,31 @@ export default function UserPreferencesScreen({ navigation }: any) {
                             <TouchableOpacity
                                 key={opt.id}
                                 onPress={() => toggleStyle(opt.id)}
-                                style={[styles.logicChip, active && styles.logicChipActive]}
+                                style={[styles.chip, active && styles.chipStyleActive]}
                             >
-                                <Text style={[styles.logicChipText, active && styles.logicChipTextActive]}>{opt.label}</Text>
+                                <Text style={[styles.chipText, active && styles.chipStyleTextActive]}>{opt.label}</Text>
                             </TouchableOpacity>
                         );
                     })}
                 </View>
 
-                {/* 3. NEURAL DIRECTIVES */}
-                <View style={[styles.sectionHeader, { marginTop: 30 }]}>
-                    <Globe2 size={18} color="#a855f7" />
-                    <Text style={styles.sectionTitle}>Neural Directives</Text>
+                <View style={[styles.sectionHeader, { marginTop: spacing.lg }]}>
+                    <Globe2 size={18} color={colors.textSecondary} />
+                    <Text style={common.sectionTitle}>Notatki osobiste</Text>
                 </View>
                 <TextInput
                     style={styles.textArea}
                     multiline
-                    placeholder="Example: Always suggest vegan restaurants or avoid steep stairs..."
-                    placeholderTextColor="#a1a1aa"
+                    placeholder="np. Zawsze proponuj restauracje wegańskie..."
+                    placeholderTextColor={colors.textMuted}
                     value={preferences.personalNotes}
-                    onChangeText={(txt) => setPreferences({...preferences, personalNotes: txt})}
+                    onChangeText={(txt) => setPreferences({ ...preferences, personalNotes: txt })}
                 />
 
-                <TouchableOpacity style={styles.applyBtn} onPress={handleSave} disabled={saving}>
-                    <Text style={styles.applyBtnText}>APPLY PROTOCOL</Text>
+                <TouchableOpacity style={[common.primaryBtn, { marginTop: spacing.lg }, saving && { opacity: 0.6 }]} onPress={handleSave} disabled={saving}>
+                    <Text style={common.primaryBtnText}>Zapisz zmiany</Text>
                 </TouchableOpacity>
-
-                <View style={{ height: 40 }} />
             </ScrollView>
         </SafeAreaView>
     );
 }
-
-const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: '#fcfcfc' },
-    loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#fcfcfc' },
-    header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingBottom: 15, paddingTop: Platform.OS === 'android' ? 45 : 10 },
-    backBtn: { padding: 8, backgroundColor: '#f4f4f5', borderRadius: 12 },
-    headerTitle: { fontSize: 18, fontWeight: '900', color: '#18181b', textTransform: 'uppercase', letterSpacing: 1 },
-    saveIconBtn: { padding: 8 },
-    scrollContent: { padding: 20 },
-    sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 15 },
-    sectionTitle: { fontSize: 14, fontWeight: '900', color: '#18181b', textTransform: 'uppercase', letterSpacing: 1 },
-    catBox: { marginBottom: 20 },
-    catTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 10, marginLeft: 4 },
-    catName: { fontSize: 10, fontWeight: '800', color: '#71717a', textTransform: 'uppercase', letterSpacing: 1 },
-    chipGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-    chip: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 10, backgroundColor: '#fff', borderWidth: 1, borderColor: '#f4f4f5' },
-    chipActive: { backgroundColor: '#6366f1', borderColor: '#6366f1' },
-    chipText: { fontSize: 11, fontWeight: '700', color: '#71717a' },
-    chipTextActive: { color: '#fff' },
-    logicChip: { paddingHorizontal: 16, paddingVertical: 10, borderRadius: 14, borderWidth: 1, borderColor: '#e4e4e7', backgroundColor: '#fff' },
-    logicChipActive: { backgroundColor: '#ecfdf5', borderColor: '#10b981' },
-    logicChipText: { fontSize: 10, fontWeight: '900', color: '#71717a', textTransform: 'uppercase' },
-    logicChipTextActive: { color: '#059669' },
-    textArea: { backgroundColor: '#fff', borderRadius: 20, padding: 16, height: 120, textAlignVertical: 'top', borderWidth: 1, borderColor: '#f4f4f5', fontSize: 14, color: '#18181b' },
-    applyBtn: { marginTop: 30, backgroundColor: '#18181b', padding: 20, borderRadius: 20, alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 8, elevation: 5 },
-    applyBtnText: { color: '#fff', fontWeight: '900', fontSize: 14, letterSpacing: 2 }
-});

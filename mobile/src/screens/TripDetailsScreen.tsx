@@ -1,14 +1,18 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 import {
     StyleSheet, Text, View, ScrollView, TouchableOpacity,
-    ActivityIndicator, SafeAreaView, Alert, LayoutAnimation, Platform, UIManager
+    ActivityIndicator, SafeAreaView, Alert, LayoutAnimation, Platform, UIManager,
 } from 'react-native';
-import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
+import MapView from 'react-native-maps';
 import {
-    ChevronLeft, Sparkles, Trash2, CheckCircle2, Clock,
-    ShieldCheck, Heart, Settings
+    Sparkles, Trash2, CheckCircle2, MapPin, Heart, Pencil,
 } from 'lucide-react-native';
 import { tripsService } from '../api/tripsService';
+import { ScreenHeader } from '../components/ui/ScreenHeader';
+import { TripMap } from '../components/trips/TripMap';
+import { useTheme } from '../context/ThemeContext';
+import { toggleWaypointSpeech, stopSpeech } from '../utils/speech';
+import { useFocusEffect } from '@react-navigation/native';
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
     UIManager.setLayoutAnimationEnabledExperimental(true);
@@ -16,6 +20,7 @@ if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental
 
 export default function TripDetailsScreen({ route, navigation }: any) {
     const { id } = route.params;
+    const { colors, common, spacing, radius } = useTheme();
     const [trip, setTrip] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [isGenerating, setIsGenerating] = useState(false);
@@ -26,8 +31,8 @@ export default function TripDetailsScreen({ route, navigation }: any) {
         try {
             const res = await tripsService.getTripDetails(id);
             setTrip(res.data || res);
-        } catch (err: any) {
-            Alert.alert("System Failure", "Could not sync with Voyager DB.");
+        } catch {
+            Alert.alert('Błąd', 'Nie udało się wczytać wycieczki.');
             navigation.goBack();
         } finally {
             setLoading(false);
@@ -36,18 +41,22 @@ export default function TripDetailsScreen({ route, navigation }: any) {
 
     useEffect(() => { loadData(); }, [loadData]);
 
+    useFocusEffect(
+        useCallback(() => () => stopSpeech(), []),
+    );
+
     const toggleFavorite = async () => {
         try {
             const newStatus = !trip.isFavorite;
             setTrip((prev: any) => ({ ...prev, isFavorite: newStatus }));
             await tripsService.updateTrip(id, { isFavorite: newStatus });
-        } catch (err) {
+        } catch {
             setTrip((prev: any) => ({ ...prev, isFavorite: !prev.isFavorite }));
-            Alert.alert("Error", "Could not update favorite status.");
+            Alert.alert('Błąd', 'Nie udało się zaktualizować ulubionych.');
         }
     };
 
-    const handleWaypointPress = (wp: any) => {
+    const handleWaypointPress = (wp: any, index: number) => {
         const lat = wp.location?.lat || wp.lat;
         const lng = wp.location?.lng || wp.lng;
         if (mapRef.current && lat && lng) {
@@ -56,13 +65,14 @@ export default function TripDetailsScreen({ route, navigation }: any) {
                 longitude: lng,
                 latitudeDelta: 0.01,
                 longitudeDelta: 0.01,
-            }, 1000);
+            }, 800);
         }
+        toggleWaypointSpeech(wp, wp._id || String(index));
     };
 
     const toggleDescription = (wpId: string) => {
         LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-        setExpandedId(prev => (prev === wpId ? null : wpId));
+        setExpandedId((prev) => (prev === wpId ? null : wpId));
     };
 
     const handleGenerateAI = async () => {
@@ -70,9 +80,9 @@ export default function TripDetailsScreen({ route, navigation }: any) {
         try {
             await tripsService.generateAIWaypoints(id);
             await loadData();
-            Alert.alert("Mission Updated", "AI has plotted new trajectory.");
+            Alert.alert('Sukces', 'Trasa wygenerowana pomyślnie.');
         } catch (err: any) {
-            Alert.alert("AI Error", err.message);
+            Alert.alert('Błąd AI', err.message || 'Generowanie nie powiodło się.');
         } finally {
             setIsGenerating(false);
         }
@@ -85,241 +95,218 @@ export default function TripDetailsScreen({ route, navigation }: any) {
             setTrip((prev: any) => ({
                 ...prev,
                 waypoints: prev.waypoints.map((w: any) =>
-                    w._id === wp._id ? { ...w, visited: newStatus } : w
-                )
+                    w._id === wp._id ? { ...w, visited: newStatus } : w,
+                ),
             }));
-        } catch (err: any) {
-            Alert.alert("Sync Error", "Could not update point status.");
+        } catch {
+            Alert.alert('Błąd', 'Nie udało się zaktualizować statusu punktu.');
         }
     };
 
     const deleteWaypoint = (wpId: string) => {
-        Alert.alert("Abort Objective?", "Remove this point from navigation?", [
-            { text: "Cancel", style: "cancel" },
+        Alert.alert('Usuń punkt', 'Usunąć ten punkt trasy?', [
+            { text: 'Anuluj', style: 'cancel' },
             {
-                text: "Delete",
-                style: "destructive",
+                text: 'Usuń',
+                style: 'destructive',
                 onPress: async () => {
                     try {
                         await tripsService.deleteWaypoint(wpId);
                         setTrip((prev: any) => ({
                             ...prev,
-                            waypoints: prev.waypoints.filter((w: any) => w._id !== wpId)
+                            waypoints: prev.waypoints.filter((w: any) => w._id !== wpId),
                         }));
-                    } catch (err) { Alert.alert("Error", "Delete failed."); }
-                }
-            }
+                    } catch {
+                        Alert.alert('Błąd', 'Usuwanie nie powiodło się.');
+                    }
+                },
+            },
         ]);
     };
 
-    if (loading || !trip) return (
-        <View style={styles.centered}><ActivityIndicator color="#18181b" size="large" /></View>
+    if (loading || !trip) {
+        return (
+            <View style={common.centered}>
+                <ActivityIndicator color={colors.textMuted} size="large" />
+            </View>
+        );
+    }
+
+    const headerRight = (
+        <View style={styles.headerActions}>
+            <TouchableOpacity onPress={toggleFavorite} style={[common.iconBtn, styles.headerIconBtn]}>
+                <Heart
+                    size={18}
+                    color={trip.isFavorite ? colors.rose : colors.textSecondary}
+                    fill={trip.isFavorite ? colors.rose : 'none'}
+                />
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => navigation.navigate('EditTrip', { id })} style={[common.iconBtn, styles.headerIconBtn]}>
+                <Pencil size={18} color={colors.textSecondary} />
+            </TouchableOpacity>
+            <TouchableOpacity
+                onPress={handleGenerateAI}
+                disabled={isGenerating}
+                style={[common.primaryBtn, styles.headerGenBtn, isGenerating && { opacity: 0.6 }]}
+            >
+                {isGenerating ? (
+                    <ActivityIndicator size="small" color={colors.onAccent} />
+                ) : (
+                    <Sparkles size={18} color={colors.onAccent} />
+                )}
+            </TouchableOpacity>
+        </View>
     );
 
-    const headerHitSlop = { top: 20, bottom: 20, left: 20, right: 20 };
-
     return (
-        <SafeAreaView style={styles.container}>
-            <View style={styles.header}>
-                <TouchableOpacity
-                    onPress={() => navigation.goBack()}
-                    style={styles.backBtn}
-                    hitSlop={headerHitSlop}
-                >
-                    <ChevronLeft color="#18181b" size={24} />
-                </TouchableOpacity>
-
-                <View style={styles.headerInfo}>
-                    <View style={styles.missionBadge}>
-                        <ShieldCheck size={10} color="#a855f7" />
-                        <Text style={styles.missionText}>ACTIVE MISSION</Text>
-                    </View>
-                    <Text style={styles.title} numberOfLines={1}>{trip.title}</Text>
-                </View>
-
-                <View style={styles.headerActions}>
-                    <TouchableOpacity
-                        onPress={toggleFavorite}
-                        style={styles.actionBtn}
-                        hitSlop={headerHitSlop}
-                    >
-                        <Heart
-                            size={20}
-                            color={trip.isFavorite ? "#f43f5e" : "#18181b"}
-                            fill={trip.isFavorite ? "#f43f5e" : "none"}
-                        />
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                        onPress={() => navigation.navigate('EditTrip', { id })}
-                        style={styles.actionBtn}
-                        hitSlop={headerHitSlop}
-                    >
-                        <Settings size={20} color="#18181b" />
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                        onPress={handleGenerateAI}
-                        disabled={isGenerating}
-                        style={[styles.aiBtn, isGenerating && { opacity: 0.5 }]}
-                        hitSlop={headerHitSlop}
-                    >
-                        {isGenerating ? <ActivityIndicator size="small" color="#fff" /> : <Sparkles size={20} color="#fff" />}
-                    </TouchableOpacity>
-                </View>
-            </View>
+        <SafeAreaView style={common.screen}>
+            <ScreenHeader
+                title={trip.title}
+                subtitle={`${trip.origin?.address} → ${trip.destination?.address}`}
+                onBack={() => navigation.goBack()}
+                right={headerRight}
+            />
 
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ flexGrow: 1 }}>
-                {/* ... reszta kodu bez zmian ... */}
-                <View style={styles.mapContainer}>
-                    <MapView
+                <View style={{ borderBottomWidth: 1, borderBottomColor: colors.border }}>
+                    <TripMap
                         ref={mapRef}
-                        style={styles.map}
-                        provider={PROVIDER_GOOGLE}
-                        initialRegion={{
-                            latitude: trip.waypoints?.[0]?.lat || 52.2297,
-                            longitude: trip.waypoints?.[0]?.lng || 21.0122,
-                            latitudeDelta: 0.5,
-                            longitudeDelta: 0.5,
-                        }}
-                    >
-                        {trip.waypoints?.map((wp: any, idx: number) => (
-                            <Marker
-                                key={wp._id || idx}
-                                coordinate={{
-                                    latitude: wp.location?.lat || wp.lat,
-                                    longitude: wp.location?.lng || wp.lng
-                                }}
-                                title={wp.name}
-                                pinColor={idx === 0 ? "gold" : (idx === trip.waypoints.length - 1 ? "red" : "violet")}
-                            />
-                        ))}
-                    </MapView>
+                        waypoints={trip.waypoints || []}
+                        routeLineColor={colors.routeLine}
+                        mapBg={colors.elevated}
+                    />
                 </View>
 
-                <View style={styles.content}>
-                    <View style={styles.sectionHeader}>
-                        <Clock size={14} color="#71717a" />
-                        <Text style={styles.sectionTitle}>INTELLIGENCE DIRECTIVES</Text>
+                <View style={{ padding: spacing.lg }}>
+                    <View style={styles.sectionRow}>
+                        <Text style={common.sectionTitle}>Punkty trasy</Text>
+                        <TouchableOpacity onPress={handleGenerateAI} disabled={isGenerating} style={styles.genLink}>
+                            <Sparkles size={14} color={colors.textSecondary} />
+                            <Text style={{ fontSize: 13, color: colors.textSecondary, fontWeight: '500' }}>
+                                {isGenerating ? 'Generowanie…' : 'Generuj trasę'}
+                            </Text>
+                        </TouchableOpacity>
                     </View>
+
+                    {trip.waypoints?.length === 0 && (
+                        <View style={common.card}>
+                            <Text style={{ fontSize: 14, color: colors.textMuted, lineHeight: 20 }}>
+                                Brak punktów trasy. Użyj „Generuj trasę”, aby utworzyć plan.
+                            </Text>
+                        </View>
+                    )}
 
                     {trip.waypoints?.map((wp: any, index: number) => {
                         const isExpanded = expandedId === wp._id;
                         return (
                             <TouchableOpacity
                                 key={wp._id || index}
-                                style={[styles.wpCard, wp.visited && styles.wpVisited]}
-                                onPress={() => handleWaypointPress(wp)}
+                                style={[styles.wpCard, {
+                                    backgroundColor: colors.surface,
+                                    borderColor: colors.border,
+                                    borderRadius: radius.lg,
+                                }, wp.visited && { opacity: 0.65 }]}
+                                onPress={() => handleWaypointPress(wp, index)}
                                 onLongPress={() => toggleDescription(wp._id)}
                                 delayLongPress={350}
-                                activeOpacity={0.8}
+                                activeOpacity={0.85}
                             >
-                                <View style={styles.wpNumberContainer}>
-                                    <TouchableOpacity
-                                        onPress={() => toggleVisited(wp)}
-                                        style={[styles.checkCircle, wp.visited && styles.checkActive]}
-                                    >
-                                        {wp.visited ? <CheckCircle2 size={16} color="#fff" /> : <Text style={styles.wpIndex}>{index + 1}</Text>}
-                                    </TouchableOpacity>
-                                    {index !== trip.waypoints.length - 1 && <View style={styles.line} />}
-                                </View>
+                                <TouchableOpacity
+                                    onPress={() => toggleVisited(wp)}
+                                    style={[styles.wpBadge, {
+                                        backgroundColor: wp.visited ? colors.emerald : colors.elevated,
+                                        borderColor: wp.visited ? colors.emerald : colors.border,
+                                    }]}
+                                >
+                                    {wp.visited ? (
+                                        <CheckCircle2 size={16} color="#fff" />
+                                    ) : (
+                                        <Text style={{ fontSize: 12, fontWeight: '600', color: colors.textMuted }}>
+                                            {index + 1}
+                                        </Text>
+                                    )}
+                                </TouchableOpacity>
 
-                                <View style={styles.wpContent}>
+                                <View style={{ flex: 1 }}>
                                     <View style={styles.wpHeader}>
-                                        <Text style={[styles.wpName, wp.visited && styles.textStrikethrough]}>{wp.name}</Text>
-                                        <TouchableOpacity onPress={() => deleteWaypoint(wp._id)} style={styles.deleteAction}>
-                                            <Trash2 size={16} color="#ef4444" />
+                                        <Text
+                                            style={[{
+                                                fontSize: 15,
+                                                fontWeight: '600',
+                                                color: colors.text,
+                                                flex: 1,
+                                            }, wp.visited && { textDecorationLine: 'line-through', color: colors.textMuted }]}
+                                            numberOfLines={2}
+                                        >
+                                            {wp.name}
+                                        </Text>
+                                        <TouchableOpacity onPress={() => deleteWaypoint(wp._id)}>
+                                            <Trash2 size={16} color={colors.error} />
                                         </TouchableOpacity>
                                     </View>
-                                    <Text style={styles.wpAddress}>{wp.address || "Location Verified"}</Text>
-
-                                    <View style={styles.descriptionContainer}>
-                                        {isExpanded ? (
-                                            <View style={styles.expandedBox}>
-                                                <Text style={styles.wpDescFull}>
-                                                    {wp.description || "No tactical data available."}
-                                                </Text>
-                                                <Text style={styles.expandHint}>Hold again to collapse</Text>
-                                            </View>
-                                        ) : (
-                                            <Text style={styles.wpDescShort} numberOfLines={2}>
-                                                {wp.description || "No tactical data available."}
+                                    {wp.address ? (
+                                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4 }}>
+                                            <MapPin size={11} color={colors.textMuted} />
+                                            <Text style={{ fontSize: 12, color: colors.textMuted, flex: 1 }} numberOfLines={1}>
+                                                {wp.address}
                                             </Text>
-                                        )}
-                                    </View>
+                                        </View>
+                                    ) : null}
+                                    {wp.description ? (
+                                        <Text
+                                            style={{ fontSize: 13, color: colors.textSecondary, marginTop: 6, lineHeight: 18 }}
+                                            numberOfLines={isExpanded ? undefined : 2}
+                                        >
+                                            {wp.description}
+                                        </Text>
+                                    ) : null}
                                 </View>
                             </TouchableOpacity>
                         );
                     })}
                 </View>
-                <View style={{ height: 60 }} />
+                <View style={{ height: 40 }} />
             </ScrollView>
         </SafeAreaView>
     );
 }
 
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: '#fff' },
-    centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-    header: {
-        flexDirection: 'row',
+    headerActions: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+    headerIconBtn: {
+        width: 40,
+        height: 40,
+        padding: 0,
         alignItems: 'center',
-        paddingHorizontal: 16,
-        paddingBottom: 20,
-        // KLUCZOWA ZMIANA: Duży odstęp od góry dla testu dotyku
-        paddingTop: Platform.OS === 'android' ? 45 : 30,
-        borderBottomWidth: 1,
-        borderBottomColor: '#f4f4f5',
-        backgroundColor: '#fff',
-        zIndex: 999, // Ekstremalnie wysoki zIndex
-        elevation: 10,
-    },
-    backBtn: { padding: 10, backgroundColor: '#f4f4f5', borderRadius: 12 },
-    headerInfo: { flex: 1, marginLeft: 12 },
-    headerActions: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 12
-    },
-    actionBtn: {
-        padding: 10,
-        backgroundColor: '#f4f4f5',
-        borderRadius: 12,
         justifyContent: 'center',
-        alignItems: 'center'
     },
-    missionBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 2 },
-    missionText: { fontSize: 8, fontWeight: '900', color: '#a855f7', letterSpacing: 1 },
-    title: { fontSize: 15, fontWeight: 'bold', color: '#18181b', maxWidth: 100 },
-    aiBtn: { backgroundColor: '#18181b', padding: 10, borderRadius: 12 },
-    mapContainer: { height: 300, width: '100%', backgroundColor: '#f4f4f5' },
-    map: { flex: 1 },
-    content: { padding: 24 },
-    sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 20 },
-    sectionTitle: { fontSize: 10, fontWeight: '900', color: '#71717a', letterSpacing: 2 },
-    wpCard: { flexDirection: 'row', marginBottom: 4 },
-    wpVisited: { opacity: 0.6 },
-    wpNumberContainer: { alignItems: 'center', width: 40 },
-    checkCircle: { width: 32, height: 32, borderRadius: 16, backgroundColor: '#f4f4f5', justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: '#e4e4e7' },
-    checkActive: { backgroundColor: '#10b981', borderColor: '#10b981' },
-    wpIndex: { fontSize: 12, fontWeight: 'bold', color: '#71717a' },
-    line: { width: 2, flex: 1, backgroundColor: '#f4f4f5', marginVertical: 4 },
-    wpContent: { flex: 1, marginLeft: 12, paddingBottom: 24 },
-    wpHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
-    wpName: { fontSize: 16, fontWeight: 'bold', color: '#18181b', flex: 1 },
-    deleteAction: { padding: 4 },
-    textStrikethrough: { textDecorationLine: 'line-through', color: '#a1a1aa' },
-    wpAddress: { fontSize: 10, fontWeight: 'bold', color: '#a855f7', textTransform: 'uppercase', marginVertical: 4 },
-    descriptionContainer: { marginTop: 2 },
-    wpDescShort: { fontSize: 13, color: '#71717a', lineHeight: 18 },
-    wpDescFull: { fontSize: 13, color: '#3f3f46', lineHeight: 20 },
-    expandedBox: {
-        backgroundColor: '#fdfaff',
-        padding: 12,
-        borderRadius: 8,
-        borderLeftWidth: 3,
-        borderLeftColor: '#a855f7',
-        marginTop: 6
+    headerGenBtn: {
+        width: 40,
+        height: 40,
+        paddingVertical: 0,
+        paddingHorizontal: 0,
     },
-    expandHint: { fontSize: 10, color: '#a855f7', marginTop: 10, fontStyle: 'italic', fontWeight: 'bold' }
+    sectionRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 16,
+    },
+    genLink: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+    wpCard: {
+        flexDirection: 'row',
+        gap: 8,
+        borderWidth: 1,
+        padding: 16,
+        marginBottom: 8,
+    },
+    wpBadge: {
+        width: 32,
+        height: 32,
+        borderRadius: 16,
+        borderWidth: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    wpHeader: { flexDirection: 'row', justifyContent: 'space-between', gap: 8 },
 });
