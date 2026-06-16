@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import api from '../../api/axiosInstance';
+import { useUI } from '../../context/UIContext';
+import { AppearancePanel } from '../../components/common/AppearancePanel';
 import { Mail, Lock, Compass, ArrowRight, Loader2 } from 'lucide-react';
 
 export const LoginPage: React.FC = () => {
@@ -8,6 +10,7 @@ export const LoginPage: React.FC = () => {
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
+    const { toast } = useUI();
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -18,81 +21,80 @@ export const LoginPage: React.FC = () => {
             localStorage.setItem('user', JSON.stringify(response.data.user));
             navigate('/dashboard');
             window.location.reload();
-        } catch (error) {
-            alert('Nie udało się zalogować. Sprawdź dane (admin@voyager.pl / Haslo123!)');
+        } catch {
+            toast('Logowanie nie powiodło się. Sprawdź e-mail i hasło.', 'error');
         } finally {
             setLoading(false);
         }
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-white px-6">
-            <div className="w-full max-w-[400px]">
-                {/* Logo Section */}
-                <div className="flex flex-col items-center mb-10">
-                    <div className="p-4 bg-zinc-900 rounded-[2rem] text-white mb-4 shadow-xl shadow-zinc-200">
-                        <Compass size={32} />
+        <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950 px-6 relative">
+            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-200/50 via-transparent to-transparent dark:from-slate-800/30 pointer-events-none" />
+            <div className="absolute top-4 right-4 z-10">
+                <AppearancePanel />
+            </div>
+
+            <div className="w-full max-w-[400px] relative">
+                <div className="card p-8 shadow-xl">
+                    <div className="flex flex-col items-center mb-8">
+                        <div className="w-12 h-12 bg-accent rounded-xl flex items-center justify-center mb-4 shadow-sm">
+                            <Compass size={24} className="text-white dark:text-slate-900" />
+                        </div>
+                        <h1 className="text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">Witaj ponownie</h1>
+                        <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">Zaloguj się do Smart Voyager</p>
                     </div>
-                    <h1 className="text-3xl font-bold tracking-tighter text-zinc-900">Welcome Back</h1>
-                    <p className="text-zinc-500 text-sm mt-2">Log in to your Voyager AI account</p>
+
+                    <form onSubmit={handleLogin} className="space-y-4">
+                        <div className="space-y-1.5">
+                            <label className="text-sm font-medium text-slate-700 dark:text-slate-300">E-mail</label>
+                            <div className="relative">
+                                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                                <input
+                                    required
+                                    type="email"
+                                    placeholder="you@example.com"
+                                    value={email}
+                                    onChange={e => setEmail(e.target.value)}
+                                    className="input-field pl-10"
+                                />
+                            </div>
+                        </div>
+
+                        <div className="space-y-1.5">
+                            <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Hasło</label>
+                            <div className="relative">
+                                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                                <input
+                                    required
+                                    type="password"
+                                    placeholder="••••••••"
+                                    value={password}
+                                    onChange={e => setPassword(e.target.value)}
+                                    className="input-field pl-10"
+                                />
+                            </div>
+                        </div>
+
+                        <button disabled={loading} type="submit" className="btn-primary w-full mt-2 py-3">
+                            {loading ? (
+                                <Loader2 className="animate-spin" size={20} />
+                            ) : (
+                                <>
+                                    Zaloguj się
+                                    <ArrowRight size={16} />
+                                </>
+                            )}
+                        </button>
+                    </form>
+
+                    <p className="mt-6 text-center text-slate-500 dark:text-slate-400 text-sm">
+                        Nie masz konta?{' '}
+                        <Link to="/register" className="text-accent font-medium hover:underline">
+                            Zarejestruj się
+                        </Link>
+                    </p>
                 </div>
-
-                <form onSubmit={handleLogin} className="space-y-4">
-                    {/* Email Input */}
-                    <div className="space-y-1">
-                        <label className="text-[10px] font-black uppercase tracking-widest text-zinc-400 ml-4">Email Address</label>
-                        <div className="relative">
-                            <Mail className="absolute left-5 top-1/2 -translate-y-1/2 text-zinc-400" size={18} />
-                            <input
-                                required
-                                type="email"
-                                placeholder="admin@voyager.pl"
-                                value={email}
-                                onChange={e => setEmail(e.target.value)}
-                                className="w-full bg-zinc-100 border-2 border-zinc-300 rounded-2xl py-4 pl-14 pr-6 outline-none focus:ring-2 focus:border-zinc-900 ring-zinc-900/5 transition-all placeholder:text-zinc-400"
-                            />
-                        </div>
-                    </div>
-
-                    {/* Password Input */}
-                    <div className="space-y-1">
-                        <label className="text-[10px] font-black uppercase tracking-widest text-zinc-400 ml-4">Password</label>
-                        <div className="relative">
-                            <Lock className="absolute left-5 top-1/2 -translate-y-1/2 text-zinc-400" size={18} />
-                            <input
-                                required
-                                type="password"
-                                placeholder="••••••••"
-                                value={password}
-                                onChange={e => setPassword(e.target.value)}
-                                className="w-full bg-zinc-100 border-2 border-zinc-300 rounded-2xl py-4 pl-14 pr-6 outline-none focus:ring-2 focus:border-zinc-900 ring-zinc-900/5 transition-all placeholder:text-zinc-400"
-                            />
-                        </div>
-                    </div>
-
-                    <button
-                        disabled={loading}
-                        type="submit"
-                        className="w-full bg-zinc-900 text-white rounded-2xl py-4 mt-4 flex items-center justify-center gap-2 hover:bg-zinc-800 transition-all disabled:opacity-50 group shadow-lg shadow-zinc-100"
-                    >
-                        {loading ? (
-                            <Loader2 className="animate-spin" size={20} />
-                        ) : (
-                            <>
-                                <span className="font-bold uppercase tracking-widest text-xs text-white">Sign In</span>
-                                <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform text-white" />
-                            </>
-                        )}
-                    </button>
-                </form>
-
-                {/* Registration Link */}
-                <p className="mt-8 text-center text-zinc-500 text-sm">
-                    Don't have an account?{' '}
-                    <Link to="/register" className="text-zinc-900 font-bold hover:underline">
-                        Register here
-                    </Link>
-                </p>
             </div>
         </div>
     );

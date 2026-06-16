@@ -1,13 +1,37 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate, Outlet } from 'react-router-dom';
+import { NavLink, Link, useNavigate, Outlet, useLocation } from 'react-router-dom';
+import { AppearancePanel } from '../components/common/AppearancePanel';
+import {
+    Menu,
+    X,
+    Compass,
+    LayoutDashboard,
+    Plus,
+    Heart,
+    SlidersHorizontal,
+    BarChart3,
+    Users,
+    MapPinned,
+    LogOut,
+} from 'lucide-react';
+
+const linkBase =
+    'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors';
+
+function navClass({ isActive }: { isActive: boolean }) {
+    return `${linkBase} ${
+        isActive
+            ? 'nav-link-active'
+            : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-100'
+    }`;
+}
 
 export const MainLayout: React.FC = () => {
     const navigate = useNavigate();
+    const location = useLocation();
+    const [sidebarOpen, setSidebarOpen] = useState(false);
+    const [userData, setUserData] = useState<Record<string, unknown> | null>(null);
 
-    // 1. Tworzymy stan dla danych użytkownika
-    const [userData, setUserData] = useState<any>(null);
-
-    // 2. Funkcja pobierająca aktualne dane z localStorage
     const loadUserData = () => {
         const userRaw = localStorage.getItem('user');
         if (userRaw) {
@@ -16,28 +40,30 @@ export const MainLayout: React.FC = () => {
     };
 
     useEffect(() => {
-        // Pobierz dane na starcie
         loadUserData();
-
-        // 3. Nasłuchuj na zdarzenie 'storage' (wywołujemy je w UserProfilePage)
         window.addEventListener('storage', loadUserData);
-        // Oraz na nasze autorskie zdarzenie, jeśli go użyłeś
         window.addEventListener('userUpdate', loadUserData);
-
         return () => {
             window.removeEventListener('storage', loadUserData);
             window.removeEventListener('userUpdate', loadUserData);
         };
     }, []);
 
-    // Obliczamy wartości na podstawie aktualnego stanu
-    const userRole = userData?.role || userData?.user?.role || 'user';
+    useEffect(() => {
+        setSidebarOpen(false);
+    }, [location.pathname]);
+
+    const userRole = (userData as { role?: string; user?: { role?: string } })?.role
+        || (userData as { user?: { role?: string } })?.user?.role
+        || 'user';
     const isAdmin = userRole === 'admin';
 
-    const fullUsername = userData?.username || userData?.user?.username || 'Podróżniku';
+    const fullUsername = (userData as { username?: string; user?: { username?: string } })?.username
+        || (userData as { user?: { username?: string } })?.user?.username
+        || 'Podróżnik';
     const firstName = fullUsername.split(' ')[0];
 
-    const initials = fullUsername !== 'Podróżniku'
+    const initials = fullUsername !== 'Podróżnik'
         ? fullUsername
             .split(' ')
             .map((n: string) => n[0])
@@ -53,83 +79,133 @@ export const MainLayout: React.FC = () => {
         navigate('/login');
     };
 
+    const isFavorites = location.search.includes('filter=favorites');
+
     return (
-        <div className="flex min-h-screen bg-gray-50">
-            {/* SIDEBAR */}
-            <aside className="w-64 bg-indigo-900 text-white flex flex-col shadow-xl">
-                <div className="p-6 text-2xl font-bold border-b border-indigo-800 flex items-center gap-2">
-                    🌍 <span>Voyager AI</span>
+        <div className="flex min-h-screen bg-slate-50 dark:bg-slate-950">
+            {sidebarOpen && (
+                <div
+                    className="fixed inset-0 bg-slate-900/30 dark:bg-black/50 backdrop-blur-sm z-40 md:hidden"
+                    onClick={() => setSidebarOpen(false)}
+                    aria-hidden="true"
+                />
+            )}
+
+            <aside
+                className={`fixed md:static inset-y-0 left-0 z-50 w-64 glass-sidebar flex flex-col transform transition-transform duration-300 ease-in-out shadow-sm ${
+                    sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
+                }`}
+            >
+                <div className="h-16 px-5 border-b border-slate-200/80 dark:border-slate-800/80 flex items-center justify-between">
+                    <Link to="/dashboard" className="flex items-center gap-2.5 group">
+                        <div className="w-8 h-8 bg-accent rounded-lg flex items-center justify-center shadow-sm group-hover:opacity-90 transition-opacity">
+                            <Compass size={18} className="text-white dark:text-slate-900" strokeWidth={2} />
+                        </div>
+                        <span className="font-semibold text-slate-900 dark:text-slate-100">Smart Voyager</span>
+                    </Link>
+                    <button
+                        onClick={() => setSidebarOpen(false)}
+                        className="md:hidden p-1.5 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
+                        aria-label="Zamknij menu"
+                    >
+                        <X size={18} />
+                    </button>
                 </div>
 
-                <nav className="flex-1 p-4 space-y-2">
-                    <Link to="/dashboard" className="flex items-center p-3 hover:bg-indigo-800 rounded-lg transition">
-                        <span className="mr-3 text-lg">📊</span> Dashboard
-                    </Link>
-                    <Link to="/dashboard/add-trip" className="flex items-center p-3 hover:bg-indigo-800 rounded-lg transition">
-                        <span className="mr-3 text-lg">✨</span> Nowa Wycieczka
-                    </Link>
-
-                    <Link
+                <nav className="flex-1 p-3 space-y-0.5">
+                    <NavLink to="/dashboard" end className={navClass}>
+                        <LayoutDashboard size={18} strokeWidth={1.75} />
+                        Panel główny
+                    </NavLink>
+                    <NavLink to="/dashboard/add-trip" className={navClass}>
+                        <Plus size={18} strokeWidth={1.75} />
+                        Nowa wycieczka
+                    </NavLink>
+                    <NavLink
                         to="/dashboard?filter=favorites"
-                        className="flex items-center p-3 hover:bg-indigo-800 rounded-lg transition text-rose-300 font-medium"
+                        className={() =>
+                            `${linkBase} ${
+                                isFavorites
+                                    ? 'bg-rose-50 dark:bg-rose-950/50 text-rose-700 dark:text-rose-400 border border-rose-200/50 dark:border-rose-900/50'
+                                    : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-100'
+                            }`
+                        }
                     >
-                        <span className="mr-3 text-lg">❤️</span> Ulubione
-                    </Link>
-
-                    <Link to="/dashboard/profile" className="flex items-center p-3 hover:bg-indigo-800 rounded-lg transition">
-                        <span className="mr-3 text-lg">👤</span> Preferencje
-                    </Link>
+                        <Heart size={18} strokeWidth={1.75} />
+                        Ulubione
+                    </NavLink>
+                    <NavLink to="/dashboard/profile" className={navClass}>
+                        <SlidersHorizontal size={18} strokeWidth={1.75} />
+                        Preferencje
+                    </NavLink>
 
                     {isAdmin && (
-                        <div className="pt-4 mt-4 border-t border-indigo-800 animate-in fade-in duration-500 space-y-1">
-                            <p className="px-3 text-[10px] uppercase text-indigo-400 font-black mb-2 tracking-[0.2em]">Command Center</p>
-                            <Link to="/admin" className="flex items-center p-3 hover:bg-indigo-800 rounded-lg transition text-white">
-                                <span className="mr-3 text-sm">🛡️</span> Statystyki Systemu
-                            </Link>
-                            <Link to="/admin/users" className="flex items-center p-3 hover:bg-indigo-800 rounded-lg transition text-white font-medium">
-                                <span className="mr-3 text-sm">👥</span> Rejestr Agentów
-                            </Link>
-                            <Link to="/admin/waypoints" className="flex items-center p-3 hover:bg-indigo-800 rounded-lg transition text-amber-400 font-medium">
-                                <span className="mr-3 text-sm">📍</span> Baza Waypointów
-                            </Link>
+                        <div className="pt-4 mt-3 border-t border-slate-200/80 dark:border-slate-800/80 space-y-0.5">
+                            <p className="px-3 py-2 text-xs font-medium text-slate-400">Administracja</p>
+                            <NavLink to="/admin" end className={navClass}>
+                                <BarChart3 size={18} strokeWidth={1.75} />
+                                Przegląd
+                            </NavLink>
+                            <NavLink to="/admin/users" className={navClass}>
+                                <Users size={18} strokeWidth={1.75} />
+                                Użytkownicy
+                            </NavLink>
+                            <NavLink to="/admin/waypoints" className={navClass}>
+                                <MapPinned size={18} strokeWidth={1.75} />
+                                Punkty trasy
+                            </NavLink>
                         </div>
                     )}
                 </nav>
 
-                <div className="p-4 border-t border-indigo-800">
+                <div className="p-3 border-t border-slate-200/80 dark:border-slate-800/80">
                     <button
                         onClick={handleLogout}
-                        className="w-full flex items-center p-3 text-red-300 hover:bg-red-900/30 rounded-lg transition"
+                        className={`${linkBase} w-full text-slate-600 dark:text-slate-400 hover:bg-red-50 dark:hover:bg-red-950/30 hover:text-red-600 dark:hover:text-red-400`}
                     >
-                        <span className="mr-3 text-lg">🚪</span> Wyloguj
+                        <LogOut size={18} strokeWidth={1.75} />
+                        Wyloguj się
                     </button>
                 </div>
             </aside>
 
-            {/* MAIN CONTENT */}
-            <main className="flex-1 h-screen overflow-y-auto">
-                <header className="bg-white h-16 shadow-sm flex items-center justify-end px-8 sticky top-0 z-10">
-                    <Link
-                        to="/dashboard/user-profile"
-                        className="flex items-center gap-3 hover:bg-gray-100 p-2 rounded-xl transition-all group"
+            <main className="flex-1 min-h-screen overflow-y-auto">
+                <header className="glass-header h-16 flex items-center justify-between px-4 md:px-8 sticky top-0 z-10">
+                    <button
+                        onClick={() => setSidebarOpen(true)}
+                        className="md:hidden p-2 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
+                        aria-label="Otwórz menu"
                     >
-                        <div className="flex flex-col items-end">
-                            {isAdmin && (
-                                <span className="px-2 py-0.5 bg-red-100 text-red-700 text-[9px] font-bold rounded uppercase border border-red-200">
-                                    Admin Mode
+                        <Menu size={20} />
+                    </button>
+
+                    <div className="flex-1 md:flex-none" />
+
+                    <div className="flex items-center gap-1">
+                        <AppearancePanel />
+
+                        <Link
+                            to="/dashboard/user-profile"
+                            className="flex items-center gap-3 hover:bg-slate-100 dark:hover:bg-slate-800 p-2 rounded-lg transition-colors ml-1"
+                        >
+                            <div className="hidden sm:flex flex-col items-end">
+                                {isAdmin && (
+                                    <span className="text-[10px] font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide">
+                                        Admin
+                                    </span>
+                                )}
+                                <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                                    {firstName}
                                 </span>
-                            )}
-                            <span className="text-sm font-medium text-gray-600 group-hover:text-indigo-600 transition-colors">
-                                Witaj, {firstName}!
-                            </span>
-                        </div>
-                        <div className="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-700 font-bold border border-indigo-200 group-hover:scale-105 group-hover:border-indigo-400 transition-all shadow-sm">
-                            {initials}
-                        </div>
-                    </Link>
+                            </div>
+                            <div className="w-9 h-9 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center text-slate-700 dark:text-slate-300 text-xs font-semibold border border-slate-200 dark:border-slate-700">
+                                {initials}
+                            </div>
+                        </Link>
+                    </div>
                 </header>
 
-                <div className="p-8">
+                <div className="layout-content p-4 md:p-8 max-w-7xl mx-auto w-full">
                     <Outlet />
                 </div>
             </main>

@@ -27,7 +27,6 @@ export const UserProfilePage = () => {
         try {
             await userService.updateProfile(user);
 
-            // 1. Aktualizacja danych w localStorage
             const current = JSON.parse(localStorage.getItem('user') || '{}');
             if (current.user) {
                 current.user = { ...current.user, ...user };
@@ -36,15 +35,14 @@ export const UserProfilePage = () => {
             }
             localStorage.setItem('user', JSON.stringify(current));
 
-            // 2. KLUCZOWY MOMENT: Wysyłamy sygnał do całej aplikacji, że dane się zmieniły
             window.dispatchEvent(new Event('storage'));
-            // Opcjonalnie, jeśli Sidebar słucha na autorskie zdarzenie:
             window.dispatchEvent(new Event('userUpdate'));
 
-            setStatus({ type: 'success', msg: 'Dane profilowe zostały zaktualizowane.' });
+            setStatus({ type: 'success', msg: 'Profil zaktualizowany pomyślnie.' });
 
-        } catch (err: any) {
-            setStatus({ type: 'error', msg: err.response?.data?.message || 'Błąd aktualizacji profilu.' });
+        } catch (err: unknown) {
+            const message = (err as { response?: { data?: { message?: string } } }).response?.data?.message || 'Aktualizacja profilu nie powiodła się.';
+            setStatus({ type: 'error', msg: message });
         } finally { setLoading(false); }
     };
 
@@ -59,75 +57,74 @@ export const UserProfilePage = () => {
                 oldPassword: passwords.oldPassword,
                 newPassword: passwords.newPassword
             });
-            setStatus({ type: 'success', msg: 'Hasło zostało zmienione pomyślnie.' });
+            setStatus({ type: 'success', msg: 'Hasło zmienione pomyślnie.' });
             setPasswords({ oldPassword: '', newPassword: '', confirmPassword: '' });
-        } catch (err: any) {
-            setStatus({ type: 'error', msg: err.response?.data?.message || 'Błąd zmiany hasła.' });
+        } catch (err: unknown) {
+            const message = (err as { response?: { data?: { message?: string } } }).response?.data?.message || 'Zmiana hasła nie powiodła się.';
+            setStatus({ type: 'error', msg: message });
         } finally { setLoading(false); }
     };
 
     return (
-        <div className="max-w-5xl mx-auto p-4 md:p-0">
+        <div className="max-w-5xl mx-auto">
             <button
                 onClick={() => navigate(-1)}
-                className="flex items-center gap-2 text-gray-500 hover:text-indigo-600 transition-colors mb-6 group text-sm"
+                className="flex items-center gap-2 text-muted hover:text-accent transition-colors mb-6 group text-sm"
             >
                 <ArrowLeft size={18} className="group-hover:-translate-x-1 transition-transform" />
-                <span>Powrót</span>
+                <span>Wstecz</span>
             </button>
 
             <div className="flex items-center justify-between mb-8">
                 <div>
-                    <h1 className="text-3xl font-bold text-gray-900">Mój Profil</h1>
-                    <p className="text-gray-500">Zarządzaj swoją tożsamością w systemie Voyager AI</p>
+                    <h1 className="page-title">Mój profil</h1>
+                    <p className="page-subtitle mt-1">Zarządzaj danymi konta i hasłem</p>
                 </div>
-                <div className="p-3 bg-indigo-50 text-indigo-600 rounded-2xl">
-                    <ShieldCheck size={32} />
+                <div className="p-3 bg-accent-muted rounded-xl text-accent">
+                    <ShieldCheck size={28} />
                 </div>
             </div>
 
             {status.msg && (
-                <div className={`mb-6 p-4 rounded-xl border animate-in fade-in duration-300 ${
-                    status.type === 'success' ? 'bg-green-50 border-green-200 text-green-700' : 'bg-red-50 border-red-200 text-red-700'
+                <div className={`mb-6 p-4 rounded-xl border ${
+                    status.type === 'success'
+                        ? 'bg-green-50 dark:bg-green-950/40 border-green-200 dark:border-green-900/50 text-green-700 dark:text-green-400'
+                        : 'bg-red-50 dark:bg-red-950/40 border-red-200 dark:border-red-900/50 text-red-700 dark:text-red-400'
                 }`}>
                     {status.msg}
                 </div>
             )}
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                <div className="md:col-span-2 space-y-6">
-                    <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100">
-                        <h2 className="text-lg font-bold mb-6 flex items-center gap-2 text-gray-800">
-                            <User size={20} className="text-indigo-500" /> Informacje podstawowe
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="md:col-span-2">
+                    <div className="card p-6 md:p-8">
+                        <h2 className="text-lg font-semibold mb-6 flex items-center gap-2 text-slate-900 dark:text-slate-100">
+                            <User size={20} className="text-accent" /> Podstawowe informacje
                         </h2>
                         <form onSubmit={handleUpdateInfo} className="space-y-4">
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <div className="space-y-1">
-                                    <label className="text-xs font-bold text-gray-400 uppercase ml-1">Nazwa użytkownika</label>
+                                <div className="space-y-1.5">
+                                    <label className="form-label">Nazwa użytkownika</label>
                                     <input
                                         type="text"
-                                        className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 outline-none focus:border-indigo-500 transition-all font-medium"
+                                        className="input-field"
                                         value={user.username}
                                         onChange={e => setUser({...user, username: e.target.value})}
                                         required
                                     />
                                 </div>
-                                <div className="space-y-1">
-                                    <label className="text-xs font-bold text-gray-400 uppercase ml-1">Adres Email</label>
+                                <div className="space-y-1.5">
+                                    <label className="form-label">Adres e-mail</label>
                                     <input
                                         type="email"
-                                        className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 outline-none focus:border-indigo-500 transition-all font-medium"
+                                        className="input-field"
                                         value={user.email}
                                         onChange={e => setUser({...user, email: e.target.value})}
                                         required
                                     />
                                 </div>
                             </div>
-                            <button
-                                type="submit"
-                                disabled={loading}
-                                className="bg-indigo-600 text-white px-8 py-3 rounded-xl font-bold hover:bg-indigo-700 transition-all flex items-center gap-2 disabled:opacity-50"
-                            >
+                            <button type="submit" disabled={loading} className="btn-primary">
                                 {loading ? <Loader2 className="animate-spin" size={18} /> : <Save size={18} />}
                                 Zapisz zmiany
                             </button>
@@ -135,24 +132,24 @@ export const UserProfilePage = () => {
                     </div>
                 </div>
 
-                <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100">
-                    <h2 className="text-lg font-bold mb-6 flex items-center gap-2 text-gray-800">
+                <div className="card p-6 md:p-8">
+                    <h2 className="text-lg font-semibold mb-6 flex items-center gap-2 text-slate-900 dark:text-slate-100">
                         <Lock size={20} className="text-rose-500" /> Bezpieczeństwo
                     </h2>
                     <form onSubmit={handleChangePass} className="space-y-4">
                         <input
                             type="password"
-                            placeholder="Aktualne hasło"
-                            className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 outline-none focus:border-rose-500 transition-all text-sm"
+                            placeholder="Obecne hasło"
+                            className="input-field"
                             value={passwords.oldPassword}
                             onChange={e => setPasswords({...passwords, oldPassword: e.target.value})}
                             required
                         />
-                        <hr className="border-gray-100 my-2" />
+                        <hr className="border-slate-200 dark:border-slate-800 my-2" />
                         <input
                             type="password"
                             placeholder="Nowe hasło"
-                            className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 outline-none focus:border-indigo-500 transition-all text-sm"
+                            className="input-field"
                             value={passwords.newPassword}
                             onChange={e => setPasswords({...passwords, newPassword: e.target.value})}
                             required
@@ -160,17 +157,13 @@ export const UserProfilePage = () => {
                         <input
                             type="password"
                             placeholder="Powtórz nowe hasło"
-                            className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 outline-none focus:border-indigo-500 transition-all text-sm"
+                            className="input-field"
                             value={passwords.confirmPassword}
                             onChange={e => setPasswords({...passwords, confirmPassword: e.target.value})}
                             required
                         />
-                        <button
-                            type="submit"
-                            disabled={loading}
-                            className="w-full bg-gray-900 text-white py-3 rounded-xl font-bold hover:bg-black transition-all disabled:opacity-50"
-                        >
-                            Aktualizuj hasło
+                        <button type="submit" disabled={loading} className="btn-primary w-full">
+                            Zaktualizuj hasło
                         </button>
                     </form>
                 </div>

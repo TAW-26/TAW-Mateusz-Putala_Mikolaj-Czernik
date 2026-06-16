@@ -1,27 +1,40 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
-import { useParams } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import { tripsService } from '../../api/tripsService.ts';
 import { Mapbox } from '../../components/trips/Mapbox.tsx';
-import { MapPin, Sparkles, Loader2, Navigation, Clock, ShieldCheck, Trash2, CheckCircle2, AlertOctagon } from 'lucide-react';
+import { useUI } from '../../context/UIContext';
+import {
+    MapPin,
+    Sparkles,
+    Loader2,
+    ArrowRight,
+    Trash2,
+    CheckCircle2,
+    AlertCircle,
+    Pencil,
+    ArrowLeft,
+} from 'lucide-react';
 
 export const TripDetailsPage = () => {
     const { id } = useParams<{ id: string }>();
+    const { toast, confirm } = useUI();
     const [trip, setTrip] = useState<any | null>(null);
     const [isGenerating, setIsGenerating] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    const mapRef = useRef<any>(null);
+    const mapRef = useRef<{ flyTo: (coords: [number, number]) => void } | null>(null);
 
     const loadData = useCallback(async () => {
         if (!id) return;
         try {
             const res = await tripsService.getTripDetails(id);
             setTrip(res.data || res);
-            setError(null); // Czyścimy błędy przy udanym ładowaniu
-        } catch (err: any) {
-            console.error("Load error:", err);
-            // Wykorzystujemy komunikat z serwera lub fallback
-            setError(err.response?.data?.message || "Could not synchronize with the Voyager Database.");
+            setError(null);
+        } catch (err: unknown) {
+            console.error('Load error:', err);
+            const message = (err as { response?: { data?: { message?: string } } }).response?.data?.message
+                || 'Nie udało się wczytać szczegółów wycieczki.';
+            setError(message);
         }
     }, [id]);
 
@@ -39,24 +52,28 @@ export const TripDetailsPage = () => {
                     w._id === wp._id ? { ...w, visited: newStatus } : w
                 )
             }));
-        } catch (err: any) {
-            console.error("Sync error:", err);
-            alert(err.response?.data?.message || "Critical failure: Could not update mission status.");
+        } catch (err: unknown) {
+            const message = (err as { response?: { data?: { message?: string } } }).response?.data?.message
+                || 'Nie udało się zaktualizować statusu punktu trasy.';
+            toast(message, 'error');
         }
     };
 
     const deleteWaypoint = async (e: React.MouseEvent, wpId: string) => {
         e.stopPropagation();
-        if (!window.confirm("Abort this objective? Point will be removed from navigation.")) return;
+        const confirmed = await confirm('Usunąć ten punkt trasy z trasy?');
+        if (!confirmed) return;
         try {
             await tripsService.deleteWaypoint(wpId);
             setTrip((prev: any) => ({
                 ...prev,
                 waypoints: prev.waypoints.filter((w: any) => w._id !== wpId)
             }));
-        } catch (err: any) {
-            console.error("Delete error:", err);
-            alert(err.response?.data?.message || "Failed to remove point from database.");
+            toast('Punkt trasy usunięty.', 'success');
+        } catch (err: unknown) {
+            const message = (err as { response?: { data?: { message?: string } } }).response?.data?.message
+                || 'Nie udało się usunąć punktu trasy.';
+            toast(message, 'error');
         }
     };
 
@@ -66,9 +83,10 @@ export const TripDetailsPage = () => {
         try {
             await tripsService.generateAIWaypoints(id);
             await loadData();
-        } catch (err: any) {
-            // Tutaj err.message zawiera już sformatowany tekst z tripsService.ts
-            alert(err.message);
+            toast('Trasa wygenerowana pomyślnie.', 'success');
+        } catch (err: unknown) {
+            const message = (err as { message?: string }).message || 'Generowanie AI nie powiodło się.';
+            toast(message, 'error');
         } finally {
             setIsGenerating(false);
         }
@@ -82,107 +100,135 @@ export const TripDetailsPage = () => {
         }
     };
 
-    // --- POPRAWIONY WIDOK BŁĘDU ---
-    if (error) return (
-        <div className="min-h-screen bg-zinc-950 flex items-center justify-center p-6">
-            <div className="bg-red-500/10 border border-red-500/20 p-8 rounded-[2rem] max-w-md text-center">
-                <AlertOctagon size={48} className="text-red-500 mx-auto mb-4" />
-                <h2 className="text-white font-bold text-xl mb-2">Data Retrieval Failed</h2>
-                <p className="text-zinc-500 text-sm mb-6">{error}</p>
-                <button
-                    onClick={() => window.location.reload()}
-                    className="px-6 py-2 bg-red-500 text-white rounded-xl font-bold text-xs uppercase tracking-widest"
-                >
-                    Retry Connection
-                </button>
+    if (error) {
+        return (
+            <div className="flex items-center justify-center py-20">
+                <div className="card p-8 max-w-md text-center">
+                    <AlertCircle size={32} className="text-red-500 mx-auto mb-3" />
+                    <h2 className="font-semibold text-slate-900 dark:text-slate-100 mb-2">Nie udało się wczytać wycieczki</h2>
+                    <p className="text-sm text-slate-500 dark:text-slate-400 mb-5">{error}</p>
+                    <button
+                        onClick={() => window.location.reload()}
+                        className="btn-primary"
+                    >
+                        Spróbuj ponownie
+                    </button>
+                </div>
             </div>
-        </div>
-    );
+        );
+    }
 
-    if (!trip) return (
-        <div className="flex h-screen items-center justify-center bg-zinc-950">
-            <Loader2 className="animate-spin text-zinc-500" size={40} />
-        </div>
-    );
+    if (!trip) {
+        return (
+            <div className="flex py-20 items-center justify-center">
+                <Loader2 className="animate-spin text-slate-300" size={32} />
+            </div>
+        );
+    }
 
     return (
-        <div className="min-h-screen bg-zinc-950 text-zinc-100 p-8 relative z-0">
-            <header className="max-w-6xl mx-auto flex justify-between items-end mb-12 border-b border-zinc-800 pb-8 relative">
+        <div>
+            <Link
+                to="/dashboard"
+                className="inline-flex items-center gap-1.5 text-sm text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 mb-6 transition-colors"
+            >
+                <ArrowLeft size={16} />
+                Wróć do wycieczek
+            </Link>
+
+            <header className="flex flex-col lg:flex-row lg:items-start justify-between gap-4 mb-8">
                 <div>
-                    <div className="flex items-center gap-2 text-purple-400 mb-2">
-                        <ShieldCheck size={14} />
-                        <span className="text-[10px] font-black uppercase tracking-[0.2em]">Active Mission</span>
-                    </div>
-                    <h1 className="text-5xl font-bold tracking-tighter text-white">{trip.title}</h1>
-                    <div className="text-zinc-500 mt-2 flex items-center gap-2 text-sm">
-                        <MapPin size={16} className="text-zinc-400" /> {trip.origin.address}
-                        <Navigation size={14} className="text-zinc-700" />
-                        {trip.destination.address}
+                    <h1 className="page-title">{trip.title}</h1>
+                    <div className="page-subtitle mt-2 flex flex-wrap items-center gap-2">
+                        <span className="flex items-center gap-1">
+                            <MapPin size={14} className="text-slate-400" />
+                            {trip.origin.address}
+                        </span>
+                        <ArrowRight size={14} className="text-slate-300 dark:text-slate-600" />
+                        <span className="text-slate-600 dark:text-slate-400">{trip.destination.address}</span>
                     </div>
                 </div>
 
-                <button
-                    onClick={handleGenerateAI}
-                    disabled={isGenerating}
-                    className="group relative px-8 py-4 bg-zinc-100 text-zinc-950 rounded-2xl font-bold overflow-hidden transition-all hover:scale-105 disabled:opacity-50 shadow-lg shadow-white/5 z-10"
-                >
-                    <div className="flex items-center gap-2 relative z-10">
-                        {isGenerating ? <Loader2 className="animate-spin" /> : <Sparkles size={20} />}
-                        <span>{isGenerating ? 'AI OPTIMIZING...' : 'GENERATE AI ROUTE'}</span>
-                    </div>
-                </button>
+                <div className="flex items-center gap-2">
+                    <Link
+                        to={`/dashboard/edit-trip/${id}`}
+                        className="btn-secondary"
+                    >
+                        <Pencil size={16} />
+                        Edytuj
+                    </Link>
+                    <button
+                        onClick={handleGenerateAI}
+                        disabled={isGenerating}
+                        className="btn-primary disabled:opacity-50"
+                    >
+                        {isGenerating ? (
+                            <Loader2 className="animate-spin" size={16} />
+                        ) : (
+                            <Sparkles size={16} />
+                        )}
+                        {isGenerating ? 'Generowanie…' : 'Generuj trasę'}
+                    </button>
+                </div>
             </header>
 
-            <main className="max-w-7xl mx-auto grid lg:grid-cols-5 gap-10 relative">
-                <div className="lg:col-span-2 space-y-6">
-                    <h2 className="text-[10px] font-black uppercase tracking-widest text-zinc-500 flex items-center gap-2">
-                        <Clock size={14} /> Intelligence Directives (Waypoints)
-                    </h2>
+            <div className="grid lg:grid-cols-5 gap-6">
+                <div className="lg:col-span-2 space-y-3">
+                    <h2 className="text-sm font-medium text-slate-700 dark:text-slate-300">Punkty trasy</h2>
 
-                    <div className="space-y-4">
+                    {trip.waypoints?.length === 0 && (
+                        <div className="card p-6 text-center">
+                            <p className="text-sm text-slate-500 dark:text-slate-400">
+                                Brak punktów trasy. Użyj „Generuj trasę”, aby utworzyć proponowany plan.
+                            </p>
+                        </div>
+                    )}
+
+                    <div className="space-y-2">
                         {trip.waypoints?.map((wp: any, index: number) => (
                             <div
                                 key={wp._id || index}
                                 onClick={() => handleWaypointClick(wp)}
-                                className="group bg-zinc-900/50 border border-zinc-800 p-6 rounded-[2rem] hover:border-purple-500/50 hover:bg-zinc-900 transition-all cursor-pointer relative overflow-hidden"
+                                className="group card-interactive p-4 cursor-pointer"
                             >
-                                {wp.visited && <div className="absolute inset-0 bg-emerald-500/5 pointer-events-none" />}
+                                <div className="flex gap-3">
+                                    <button
+                                        onClick={(e) => toggleVisited(e, wp)}
+                                        className={`w-7 h-7 shrink-0 rounded-full flex items-center justify-center text-xs font-medium border transition-colors ${
+                                            wp.visited
+                                                ? 'bg-emerald-600 border-emerald-600 text-white'
+                                                : 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-500 hover:border-slate-400'
+                                        }`}
+                                    >
+                                        {wp.visited ? <CheckCircle2 size={14} /> : index + 1}
+                                    </button>
 
-                                <div className="flex gap-4 relative z-10">
-                                    <div className="flex flex-col items-center">
-                                        <button
-                                            onClick={(e) => toggleVisited(e, wp)}
-                                            className={`w-8 h-8 rounded-full flex items-center justify-center transition-all border ${
-                                                wp.visited
-                                                    ? 'bg-emerald-500 border-emerald-400 text-white'
-                                                    : 'bg-zinc-800 border-zinc-700 text-zinc-500 group-hover:border-purple-500'
-                                            }`}
-                                        >
-                                            {wp.visited ? <CheckCircle2 size={16} /> : <span className="font-black text-[10px]">{index + 1}</span>}
-                                        </button>
-                                        {index !== trip.waypoints.length - 1 && (
-                                            <div className="flex-1 w-[1px] bg-zinc-800 my-2"></div>
-                                        )}
-                                    </div>
-
-                                    <div className="flex-1 pb-2">
-                                        <div className="flex justify-between items-start">
-                                            <h4 className={`text-lg font-bold mb-1 leading-tight transition-all ${wp.visited ? 'text-zinc-500 line-through' : 'text-zinc-100'}`}>
+                                    <div className="flex-1 min-w-0">
+                                        <div className="flex justify-between items-start gap-2">
+                                            <h4 className={`text-sm font-medium leading-snug ${
+                                                wp.visited ? 'text-slate-400 line-through' : 'text-slate-900 dark:text-slate-100'
+                                            }`}>
                                                 {wp.name}
                                             </h4>
                                             <button
                                                 onClick={(e) => deleteWaypoint(e, wp._id)}
-                                                className="p-2 text-zinc-600 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"
+                                                className="p-1 text-slate-400 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-all shrink-0"
+                                                aria-label="Usuń punkt trasy"
                                             >
-                                                <Trash2 size={16} />
+                                                <Trash2 size={14} />
                                             </button>
                                         </div>
-                                        <p className="text-purple-400 text-[10px] font-bold mb-2 flex items-center gap-1 uppercase tracking-tighter">
-                                            <MapPin size={10} /> {wp.address || "Location verified by AI"}
-                                        </p>
-                                        <p className="text-zinc-500 text-xs leading-relaxed line-clamp-3 group-hover:line-clamp-none transition-all duration-300">
-                                            {wp.description}
-                                        </p>
+                                        {wp.address && (
+                                            <p className="text-xs text-muted mt-1 flex items-center gap-1">
+                                                <MapPin size={11} />
+                                                {wp.address}
+                                            </p>
+                                        )}
+                                        {wp.description && (
+                                            <p className="text-xs text-muted mt-2 leading-relaxed">
+                                                {wp.description}
+                                            </p>
+                                        )}
                                     </div>
                                 </div>
                             </div>
@@ -190,29 +236,29 @@ export const TripDetailsPage = () => {
                     </div>
                 </div>
 
-                <div className="lg:col-span-3 space-y-6">
-                    <div className="sticky top-8">
-                        <div className="bg-zinc-900 border border-zinc-800 rounded-[3rem] overflow-hidden h-[700px] shadow-2xl relative p-3">
-                            {trip.waypoints && trip.waypoints.length > 0 ? (
-                                <Mapbox
-                                    ref={mapRef}
-                                    waypoints={trip.waypoints}
-                                    center={[
-                                        trip.waypoints[0].location?.lat || trip.waypoints[0].lat || 52.2297,
-                                        trip.waypoints[0].location?.lng || trip.waypoints[0].lng || 21.0122
-                                    ] as [number, number]}
-                                />
-                            ) : (
-                                <div className="h-full flex flex-col items-center justify-center p-8 text-center text-zinc-500 bg-zinc-950/50 rounded-[2.5rem]">
-                                    <MapPin className="mb-4 opacity-10" size={64} />
-                                    <p className="text-lg font-bold tracking-tighter text-zinc-700">MAP DISENGAGED</p>
-                                    <p className="text-xs opacity-40 uppercase tracking-widest mt-2">Deploy AI to establish tactical overlay</p>
-                                </div>
-                            )}
-                        </div>
+                <div className="lg:col-span-3">
+                    <div className="card overflow-hidden h-[480px] lg:h-[600px]">
+                        {trip.waypoints && trip.waypoints.length > 0 ? (
+                            <Mapbox
+                                ref={mapRef}
+                                waypoints={trip.waypoints}
+                                center={[
+                                    trip.waypoints[0].location?.lat || trip.waypoints[0].lat || 52.2297,
+                                    trip.waypoints[0].location?.lng || trip.waypoints[0].lng || 21.0122
+                                ] as [number, number]}
+                            />
+                        ) : (
+                            <div className="h-full flex flex-col items-center justify-center p-8 text-center">
+                                <MapPin className="text-slate-200 mb-3" size={40} />
+                                <p className="text-sm font-medium text-slate-600 dark:text-slate-400">Brak danych mapy</p>
+                                <p className="text-xs text-slate-400 mt-1">
+                                    Wygeneruj trasę, aby zobaczyć punkty na mapie
+                                </p>
+                            </div>
+                        )}
                     </div>
                 </div>
-            </main>
+            </div>
         </div>
     );
 };
